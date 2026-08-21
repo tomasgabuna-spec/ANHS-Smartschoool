@@ -1611,6 +1611,307 @@ td {
 
 
 /* ==============================
+   FILE CHIP (table)
+================================= */
+
+.file-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--dark, #111827);
+
+    background: #f3f4f6;
+
+    padding: 6px 10px;
+
+    border-radius: 20px;
+}
+
+.file-chip i {
+    color: var(--primary);
+}
+
+
+/* ==============================
+   FIELD ERROR
+================================= */
+
+.field-error {
+    display: none;
+
+    font-size: 10.5px;
+    font-weight: 500;
+
+    color: #dc2626;
+
+    margin-top: 6px;
+}
+
+.dropdown-field.field-invalid .multi-select-toggle,
+.file-upload.field-invalid .file-upload-dropzone {
+    border-color: #dc2626;
+}
+
+.dropdown-field.field-invalid .field-error,
+.file-upload-wrapper-invalid .field-error {
+    display: block;
+}
+
+
+/* ==============================
+   MULTI-SELECT (Grade & Section)
+================================= */
+
+.multi-select {
+    position: relative;
+
+    margin-top: 7px;
+}
+
+.multi-select-toggle {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 11px;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    background: white;
+
+    font-size: 12px;
+    font-family: inherit;
+    color: var(--dark, #111827);
+
+    cursor: pointer;
+}
+
+.multi-select-toggle #gradeSectionToggleText {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    padding-right: 8px;
+}
+
+.multi-select-toggle i {
+    color: var(--muted);
+    font-size: 11px;
+
+    transition: transform 0.15s ease;
+}
+
+.multi-select.open .multi-select-toggle i {
+    transform: rotate(180deg);
+}
+
+.multi-select.open .multi-select-toggle {
+    border-color: var(--primary);
+}
+
+.multi-select-panel {
+    display: none;
+
+    position: absolute;
+
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+
+    max-height: 260px;
+    overflow-y: auto;
+
+    background: white;
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+
+    padding: 10px;
+
+    z-index: 10;
+}
+
+.multi-select.open .multi-select-panel {
+    display: block;
+}
+
+.multi-select-group {
+    padding: 6px 4px;
+}
+
+.multi-select-group + .multi-select-group {
+    border-top: 1px solid var(--border);
+}
+
+.multi-select-group-title {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+
+    color: var(--muted);
+
+    margin-bottom: 6px;
+}
+
+.multi-select-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    font-size: 12px;
+    font-weight: 400;
+
+    padding: 6px 4px;
+
+    border-radius: 6px;
+
+    cursor: pointer;
+}
+
+.multi-select-option:hover {
+    background: #f3f4f6;
+}
+
+.multi-select-option input {
+    width: 14px;
+    height: 14px;
+
+    accent-color: var(--primary);
+
+    cursor: pointer;
+}
+
+
+/* ==============================
+   FILE UPLOAD
+================================= */
+
+.file-upload {
+    margin-top: 7px;
+}
+
+.file-upload-dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+
+    padding: 26px 16px;
+
+    border: 1.5px dashed var(--border);
+    border-radius: 10px;
+
+    background: #fafafa;
+
+    cursor: pointer;
+
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.file-upload-dropzone:hover,
+.file-upload-dropzone.dragover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+}
+
+.file-upload-dropzone i {
+    font-size: 22px;
+    color: var(--primary);
+
+    margin-bottom: 8px;
+}
+
+.file-upload-dropzone p {
+    font-size: 12px;
+    color: var(--dark, #111827);
+}
+
+.file-upload-dropzone span {
+    display: block;
+
+    font-size: 10.5px;
+    color: var(--muted);
+
+    margin-top: 4px;
+}
+
+.file-upload-preview {
+    display: none;
+    align-items: center;
+    gap: 12px;
+
+    padding: 12px 14px;
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    background: #fafafa;
+}
+
+.file-upload.has-file .file-upload-dropzone {
+    display: none;
+}
+
+.file-upload.has-file .file-upload-preview {
+    display: flex;
+}
+
+.file-upload-preview i {
+    font-size: 20px;
+    color: var(--primary);
+}
+
+.file-upload-info {
+    flex: 1;
+
+    overflow: hidden;
+}
+
+.file-upload-info p {
+    font-size: 12px;
+    font-weight: 600;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-upload-info span {
+    font-size: 10.5px;
+    color: var(--muted);
+}
+
+.file-upload-remove {
+    width: 28px;
+    height: 28px;
+
+    border: none;
+    border-radius: 50%;
+
+    background: #f3f4f6;
+
+    color: var(--muted);
+
+    cursor: pointer;
+}
+
+.file-upload-remove:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+
+/* ==============================
    RESPONSIVE
 ================================= */
 

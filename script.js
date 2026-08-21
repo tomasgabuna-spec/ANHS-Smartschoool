@@ -768,6 +768,12 @@ function hideLessonPlanModal() {
 
     lessonPlanModal.classList.remove("show");
 
+    lessonPlanForm.reset();
+
+    resetGradeSectionSelect();
+
+    clearLessonFile();
+
 }
 
 
@@ -819,6 +825,334 @@ if (lessonPlanModal) {
 
 
 /* ================================
+   LESSON PLAN WEEK OPTIONS (1-20)
+================================ */
+
+const newLessonWeek =
+    document.getElementById("newLessonWeek");
+
+if (newLessonWeek) {
+
+    const placeholderOption =
+        document.createElement("option");
+
+    placeholderOption.value = "";
+    placeholderOption.disabled = true;
+    placeholderOption.selected = true;
+    placeholderOption.textContent = "Select week";
+
+    newLessonWeek.appendChild(placeholderOption);
+
+    for (let week = 1; week <= 20; week++) {
+
+        const option =
+            document.createElement("option");
+
+        option.textContent = `Week ${week}`;
+
+        newLessonWeek.appendChild(option);
+
+    }
+
+}
+
+
+/* ================================
+   GRADE & SECTION MULTI-SELECT
+================================ */
+
+const gradeSectionSelect =
+    document.getElementById("gradeSectionSelect");
+
+const gradeSectionToggle =
+    document.getElementById("gradeSectionToggle");
+
+const gradeSectionToggleText =
+    document.getElementById("gradeSectionToggleText");
+
+const gradeSectionPanel =
+    document.getElementById("gradeSectionPanel");
+
+const gradeSectionField =
+    gradeSectionSelect
+        ? gradeSectionSelect.closest(".dropdown-field")
+        : null;
+
+
+function getCheckedGradeSections() {
+
+    if (!gradeSectionPanel) return [];
+
+    return Array.from(
+        gradeSectionPanel.querySelectorAll(
+            "input[type='checkbox']:checked"
+        )
+    ).map(checkbox => checkbox.value);
+
+}
+
+
+function updateGradeSectionToggleText() {
+
+    const selected =
+        getCheckedGradeSections();
+
+    if (selected.length === 0) {
+
+        gradeSectionToggleText.textContent =
+            "Select grade & section";
+
+    } else if (selected.length === 1) {
+
+        gradeSectionToggleText.textContent =
+            selected[0];
+
+    } else {
+
+        gradeSectionToggleText.textContent =
+            `${selected.length} sections selected`;
+
+    }
+
+}
+
+
+if (gradeSectionToggle) {
+
+    gradeSectionToggle.addEventListener(
+        "click",
+        function(event) {
+
+            event.stopPropagation();
+
+            gradeSectionSelect.classList.toggle("open");
+
+        }
+    );
+
+}
+
+
+if (gradeSectionPanel) {
+
+    gradeSectionPanel.addEventListener(
+        "change",
+        function(event) {
+
+            if (event.target.matches("input[type='checkbox']")) {
+
+                updateGradeSectionToggleText();
+
+                if (gradeSectionField) {
+
+                    gradeSectionField.classList.remove(
+                        "field-invalid"
+                    );
+
+                }
+
+            }
+
+        }
+    );
+
+    gradeSectionPanel.addEventListener(
+        "click",
+        function(event) {
+
+            event.stopPropagation();
+
+        }
+    );
+
+}
+
+
+document.addEventListener("click", function(event) {
+
+    if (
+        gradeSectionSelect &&
+        gradeSectionSelect.classList.contains("open") &&
+        !gradeSectionSelect.contains(event.target)
+    ) {
+
+        gradeSectionSelect.classList.remove("open");
+
+    }
+
+});
+
+
+function resetGradeSectionSelect() {
+
+    if (!gradeSectionPanel) return;
+
+    gradeSectionPanel
+        .querySelectorAll("input[type='checkbox']")
+        .forEach(checkbox => {
+            checkbox.checked = false;
+        });
+
+    updateGradeSectionToggleText();
+
+    if (gradeSectionSelect) {
+        gradeSectionSelect.classList.remove("open");
+    }
+
+    if (gradeSectionField) {
+        gradeSectionField.classList.remove("field-invalid");
+    }
+
+}
+
+
+/* ================================
+   LESSON PLAN FILE UPLOAD
+================================ */
+
+const lessonFileUpload =
+    document.getElementById("lessonFileUpload");
+
+const lessonFileInput =
+    document.getElementById("newLessonFile");
+
+const lessonFileDropzone =
+    document.getElementById("lessonFileDropzone");
+
+const lessonFileName =
+    document.getElementById("lessonFileName");
+
+const lessonFileSize =
+    document.getElementById("lessonFileSize");
+
+const lessonFileRemove =
+    document.getElementById("lessonFileRemove");
+
+
+function formatFileSize(bytes) {
+
+    if (bytes < 1024) return `${bytes} B`;
+
+    if (bytes < 1024 * 1024) {
+        return `${(bytes / 1024).toFixed(1)} KB`;
+    }
+
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+
+}
+
+
+function setLessonFile(file) {
+
+    if (!file) return;
+
+    lessonFileName.textContent = file.name;
+    lessonFileSize.textContent = formatFileSize(file.size);
+
+    lessonFileUpload.classList.add("has-file");
+
+    lessonFileUpload.classList.remove(
+        "field-invalid"
+    );
+
+}
+
+
+function clearLessonFile() {
+
+    lessonFileInput.value = "";
+
+    lessonFileUpload.classList.remove("has-file");
+
+}
+
+
+if (lessonFileDropzone) {
+
+    lessonFileDropzone.addEventListener(
+        "click",
+        function() {
+            lessonFileInput.click();
+        }
+    );
+
+    lessonFileDropzone.addEventListener(
+        "dragover",
+        function(event) {
+            event.preventDefault();
+            lessonFileDropzone.classList.add("dragover");
+        }
+    );
+
+    lessonFileDropzone.addEventListener(
+        "dragleave",
+        function() {
+            lessonFileDropzone.classList.remove("dragover");
+        }
+    );
+
+    lessonFileDropzone.addEventListener(
+        "drop",
+        function(event) {
+
+            event.preventDefault();
+
+            lessonFileDropzone.classList.remove("dragover");
+
+            const file =
+                event.dataTransfer.files &&
+                event.dataTransfer.files[0];
+
+            if (file) {
+
+                lessonFileInput.files =
+                    event.dataTransfer.files;
+
+                setLessonFile(file);
+
+            }
+
+        }
+    );
+
+}
+
+
+if (lessonFileInput) {
+
+    lessonFileInput.addEventListener(
+        "change",
+        function() {
+
+            const file = this.files[0];
+
+            if (file) {
+                setLessonFile(file);
+            }
+
+        }
+    );
+
+}
+
+
+if (lessonFileRemove) {
+
+    lessonFileRemove.addEventListener(
+        "click",
+        function(event) {
+
+            event.stopPropagation();
+
+            clearLessonFile();
+
+        }
+    );
+
+}
+
+
+/* ================================
    ADD LESSON PLAN
 ================================ */
 
@@ -840,9 +1174,14 @@ if (lessonPlanForm) {
                     "newLessonDate"
                 ).value;
 
-            const quarter =
+            const term =
                 document.getElementById(
-                    "newLessonQuarter"
+                    "newLessonTerm"
+                ).value;
+
+            const week =
+                document.getElementById(
+                    "newLessonWeek"
                 ).value;
 
             const subject =
@@ -850,20 +1189,44 @@ if (lessonPlanForm) {
                     "newLessonSubject"
                 ).value;
 
-            const section =
-                document.getElementById(
-                    "newLessonSection"
-                ).value;
+            const sections =
+                getCheckedGradeSections();
 
-            const topic =
-                document.getElementById(
-                    "newLessonTopic"
-                ).value;
+            const file =
+                lessonFileInput.files[0];
 
-            const status =
-                document.getElementById(
-                    "newLessonStatus"
-                ).value;
+
+            /* Validate grade & section */
+
+            let hasError = false;
+
+            if (sections.length === 0) {
+
+                gradeSectionField.classList.add(
+                    "field-invalid"
+                );
+
+                hasError = true;
+
+            }
+
+
+            /* Validate uploaded file — required */
+
+            if (!file) {
+
+                lessonFileUpload.classList.add(
+                    "field-invalid"
+                );
+
+                hasError = true;
+
+            }
+
+
+            if (hasError) {
+                return;
+            }
 
 
             const formattedDate =
@@ -877,10 +1240,23 @@ if (lessonPlanForm) {
                     : "";
 
 
-            const statusClass =
-                status === "Draft"
-                    ? "pending"
-                    : "active";
+            const sectionText =
+                sections.length === 1
+                    ? sections[0]
+                    : `${sections[0]} +${sections.length - 1} more`;
+
+
+            const fileExtension =
+                file.name.split(".").pop().toLowerCase();
+
+            const fileIcon =
+                fileExtension === "pdf"
+                    ? "fa-file-pdf"
+                    : ["doc", "docx"].includes(fileExtension)
+                        ? "fa-file-word"
+                        : ["ppt", "pptx"].includes(fileExtension)
+                            ? "fa-file-powerpoint"
+                            : "fa-file-lines";
 
 
             const tbody =
@@ -899,15 +1275,22 @@ if (lessonPlanForm) {
 
                 <td>${subject}</td>
 
-                <td>${section}</td>
+                <td>${sectionText}</td>
 
-                <td>${quarter}</td>
+                <td>${term}</td>
 
-                <td>${topic}</td>
+                <td>${week}</td>
 
                 <td>
-                    <span class="status ${statusClass}">
-                        ${status}
+                    <span class="file-chip">
+                        <i class="fa-solid ${fileIcon}"></i>
+                        ${file.name}
+                    </span>
+                </td>
+
+                <td>
+                    <span class="status active">
+                        Submitted
                     </span>
                 </td>
 
@@ -926,8 +1309,6 @@ if (lessonPlanForm) {
 
             tbody.appendChild(row);
 
-
-            lessonPlanForm.reset();
 
             hideLessonPlanModal();
 

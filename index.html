@@ -964,8 +964,9 @@
                                     <th>Date</th>
                                     <th>Subject / Learning Area</th>
                                     <th>Grade & Section</th>
-                                    <th>Quarter</th>
-                                    <th>Topic / Learning Competency</th>
+                                    <th>Term</th>
+                                    <th>Week</th>
+                                    <th>Lesson Plan File</th>
                                     <th>Status</th>
                                     <th>Action</th>
                                 </tr>
@@ -977,8 +978,14 @@
                                     <td>Aug 24, 2026</td>
                                     <td>General Mathematics</td>
                                     <td>Grade 11 - STEM A</td>
-                                    <td>1st Quarter</td>
-                                    <td>Functions and Their Graphs</td>
+                                    <td>1st Term</td>
+                                    <td>Week 3</td>
+                                    <td>
+                                        <span class="file-chip">
+                                            <i class="fa-solid fa-file-pdf"></i>
+                                            DLL_GenMath_Functions.pdf
+                                        </span>
+                                    </td>
                                     <td>
                                         <span class="status active">
                                             Submitted
@@ -995,8 +1002,14 @@
                                     <td>Aug 24, 2026</td>
                                     <td>English</td>
                                     <td>Grade 11 - ABM A</td>
-                                    <td>1st Quarter</td>
-                                    <td>Elements of a Short Story</td>
+                                    <td>1st Term</td>
+                                    <td>Week 3</td>
+                                    <td>
+                                        <span class="file-chip">
+                                            <i class="fa-solid fa-file-word"></i>
+                                            DLL_English_ShortStory.docx
+                                        </span>
+                                    </td>
                                     <td>
                                         <span class="status pending">
                                             Draft
@@ -1013,8 +1026,14 @@
                                     <td>Aug 25, 2026</td>
                                     <td>Science</td>
                                     <td>Grade 10 - Rizal</td>
-                                    <td>1st Quarter</td>
-                                    <td>Newton's Laws of Motion</td>
+                                    <td>1st Term</td>
+                                    <td>Week 4</td>
+                                    <td>
+                                        <span class="file-chip">
+                                            <i class="fa-solid fa-file-pdf"></i>
+                                            DLL_Science_NewtonsLaws.pdf
+                                        </span>
+                                    </td>
                                     <td>
                                         <span class="status active">
                                             Submitted
@@ -1472,61 +1491,176 @@
                 </label>
 
                 <label>
-                    Quarter
-                    <select id="newLessonQuarter">
-                        <option>1st Quarter</option>
-                        <option>2nd Quarter</option>
-                        <option>3rd Quarter</option>
-                        <option>4th Quarter</option>
+                    Term
+                    <select id="newLessonTerm" required>
+                        <option value="" disabled selected>Select term</option>
+                        <option>1st Term</option>
+                        <option>2nd Term</option>
+                        <option>3rd Term</option>
                     </select>
+                </label>
+
+                <label>
+                    Week
+                    <select id="newLessonWeek" required></select>
                 </label>
 
                 <label>
                     Subject / Learning Area
-                    <input
-                        type="text"
-                        id="newLessonSubject"
-                        placeholder="e.g. General Mathematics"
-                        required
-                    >
-                </label>
-
-                <label>
-                    Grade & Section
-                    <input
-                        type="text"
-                        id="newLessonSection"
-                        placeholder="e.g. Grade 11 - STEM A"
-                        required
-                    >
-                </label>
-
-                <label class="full-width">
-                    Topic / Learning Competency
-                    <input
-                        type="text"
-                        id="newLessonTopic"
-                        placeholder="e.g. Functions and Their Graphs"
-                        required
-                    >
-                </label>
-
-                <label class="full-width">
-                    Learning Objectives
-                    <textarea
-                        id="newLessonObjectives"
-                        rows="3"
-                        placeholder="At the end of the lesson, students should be able to..."
-                    ></textarea>
-                </label>
-
-                <label>
-                    Status
-                    <select id="newLessonStatus">
-                        <option>Draft</option>
-                        <option>Submitted</option>
-                        <option>Approved</option>
+                    <select id="newLessonSubject" required>
+                        <option value="" disabled selected>Select learning area</option>
+                        <option>General Mathematics</option>
+                        <option>English</option>
+                        <option>Science</option>
+                        <option>Filipino</option>
+                        <option>Araling Panlipunan</option>
+                        <option>MAPEH</option>
+                        <option>Technology and Livelihood Education (TLE)</option>
+                        <option>Edukasyon sa Pagpapakatao (EsP)</option>
+                        <option>Statistics and Probability</option>
+                        <option>Practical Research</option>
+                        <option>Empowerment Technologies</option>
+                        <option>Physical Education and Health</option>
                     </select>
+                </label>
+
+                <label class="full-width dropdown-field">
+                    Grade & Section
+                    <div class="multi-select" id="gradeSectionSelect">
+
+                        <button
+                            type="button"
+                            class="multi-select-toggle"
+                            id="gradeSectionToggle"
+                        >
+                            <span id="gradeSectionToggleText">
+                                Select grade & section
+                            </span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+
+                        <div class="multi-select-panel" id="gradeSectionPanel">
+
+                            <div class="multi-select-group">
+                                <p class="multi-select-group-title">Grade 7</p>
+                                <label class="multi-select-option">
+                                    <input type="checkbox" value="Grade 7 - Rizal">
+                                    Grade 7 - Rizal
+                                </label>
+                                <label class="multi-select-option">
+                                    <input type="checkbox" value="Grade 7 - Bonifacio">
+                                    Grade 7 - Bonifacio
+                                </label>
+                            </div>
+
+                            <div class="multi-select-group">
+                                <p class="multi-select-group-title">Grade 8</p>
+                                <label class="multi-select-option">
+                                    <input type="checkbox" value="Grade 8 - Mabini">
+                                    Grade 8 - Mabini
+                                </label>
+                                <label class="multi-select-option">
+                                    <input type="checkbox" value="Grade 8 - Aguinaldo">
+                                    Grade 8 - Aguinaldo
+                                </label>
+                            </div>
+
+                            <div class="multi-select-group">
+                                <p class="multi-select-group-title">Grade 9</p>
+                                <label class="multi-select-option">
+                                    <input type="checkbox" value="Grade 9 - Luna">
+                                    Grade 9 - Luna
+                                </label>
+                                <label class="multi-select-option">
+                                    <input type="checkbox" value="Grade 9 - Del Pilar">
+                                    Grade 9 - Del Pilar
+                                </label>
+                            </div>
+
+                            <div class="multi-select-group">
+                                <p class="multi-select-group-title">Grade 10</p>
+                                <label class="multi-select-option">
+                                    <input type="checkbox" value="Grade 10 - Rizal">
+                                    Grade 10 - Rizal
+                                </label>
+                                <label class="multi-select-option">
+                                    <input type="checkbox" value="Grade 10 - Bonifacio">
+                                    Grade 10 - Bonifacio
+                                </label>
+                            </div>
+
+                            <div class="multi-select-group">
+                                <p class="multi-select-group-title">Grade 11</p>
+                                <label class="multi-select-option">
+                                    <input type="checkbox" value="Grade 11 - STEM A">
+                                    Grade 11 - STEM A
+                                </label>
+                                <label class="multi-select-option">
+                                    <input type="checkbox" value="Grade 11 - ABM A">
+                                    Grade 11 - ABM A
+                                </label>
+                                <label class="multi-select-option">
+                                    <input type="checkbox" value="Grade 11 - HUMSS A">
+                                    Grade 11 - HUMSS A
+                                </label>
+                            </div>
+
+                            <div class="multi-select-group">
+                                <p class="multi-select-group-title">Grade 12</p>
+                                <label class="multi-select-option">
+                                    <input type="checkbox" value="Grade 12 - STEM A">
+                                    Grade 12 - STEM A
+                                </label>
+                                <label class="multi-select-option">
+                                    <input type="checkbox" value="Grade 12 - ABM A">
+                                    Grade 12 - ABM A
+                                </label>
+                            </div>
+
+                        </div>
+
+                    </div>
+                    <small class="field-error" id="gradeSectionError">
+                        Please select at least one grade & section.
+                    </small>
+                </label>
+
+                <label class="full-width">
+                    Upload Lesson Plan
+                    <div class="file-upload" id="lessonFileUpload">
+
+                        <input
+                            type="file"
+                            id="newLessonFile"
+                            accept=".pdf,.doc,.docx,.ppt,.pptx"
+                            hidden
+                        >
+
+                        <div class="file-upload-dropzone" id="lessonFileDropzone">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <p><strong>Click to upload</strong> or drag and drop</p>
+                            <span>PDF, DOC, DOCX, PPT or PPTX (max 10MB)</span>
+                        </div>
+
+                        <div class="file-upload-preview" id="lessonFilePreview">
+                            <i class="fa-solid fa-file-lines"></i>
+                            <div class="file-upload-info">
+                                <p id="lessonFileName"></p>
+                                <span id="lessonFileSize"></span>
+                            </div>
+                            <button
+                                type="button"
+                                class="file-upload-remove"
+                                id="lessonFileRemove"
+                            >
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+
+                    </div>
+                    <small class="field-error" id="lessonFileError">
+                        Please upload a lesson plan file before saving.
+                    </small>
                 </label>
 
             </div>
