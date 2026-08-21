@@ -886,7 +886,7 @@
                         <p>Manage sections, subjects and class assignments.</p>
                     </div>
 
-                    <button class="primary-btn">
+                    <button class="primary-btn" id="addClassBtn">
                         <i class="fa-solid fa-plus"></i>
                         Add Class
                     </button>
@@ -912,8 +912,151 @@
                     <div class="module-card">
                         <i class="fa-solid fa-user-tie"></i>
                         <h3>Assignments</h3>
-                        <strong>124</strong>
+                        <strong id="classAssignmentsCount">0</strong>
                         <p>Teacher assignments</p>
+                    </div>
+
+                </div>
+
+
+                <div class="card" id="classAssignmentCard">
+
+                    <div class="card-header">
+                        <div>
+                            <h3>Assign Subjects & Teachers</h3>
+                            <p>Pick a section, then choose its subjects (pulled from the Syllabus) and teachers (pulled from Teacher Management).</p>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+
+                        <label class="full-width dropdown-field" id="classSectionField">
+                            Section
+                            <select id="classSectionSelect">
+                                <option value="" disabled selected>Select section</option>
+                                <optgroup label="Grade 7">
+                                    <option value="Grade 7 - Rizal">Grade 7 - Rizal</option>
+                                    <option value="Grade 7 - Bonifacio">Grade 7 - Bonifacio</option>
+                                </optgroup>
+                                <optgroup label="Grade 8">
+                                    <option value="Grade 8 - Mabini">Grade 8 - Mabini</option>
+                                    <option value="Grade 8 - Aguinaldo">Grade 8 - Aguinaldo</option>
+                                </optgroup>
+                                <optgroup label="Grade 9">
+                                    <option value="Grade 9 - Luna">Grade 9 - Luna</option>
+                                    <option value="Grade 9 - Del Pilar">Grade 9 - Del Pilar</option>
+                                </optgroup>
+                                <optgroup label="Grade 10">
+                                    <option value="Grade 10 - Rizal">Grade 10 - Rizal</option>
+                                    <option value="Grade 10 - Bonifacio">Grade 10 - Bonifacio</option>
+                                </optgroup>
+                                <optgroup label="Grade 11">
+                                    <option value="Grade 11 - STEM A">Grade 11 - STEM A</option>
+                                    <option value="Grade 11 - ABM A">Grade 11 - ABM A</option>
+                                    <option value="Grade 11 - HUMSS A">Grade 11 - HUMSS A</option>
+                                </optgroup>
+                                <optgroup label="Grade 12">
+                                    <option value="Grade 12 - STEM A">Grade 12 - STEM A</option>
+                                    <option value="Grade 12 - ABM A">Grade 12 - ABM A</option>
+                                </optgroup>
+                            </select>
+                            <small class="field-error" id="classSectionError">
+                                Please select a section.
+                            </small>
+                        </label>
+
+                        <label class="full-width dropdown-field" id="classSubjectsField">
+                            Subjects
+                            <span class="field-hint">Loaded from Syllabus</span>
+                            <div class="multi-select" id="classSubjectsSelect">
+
+                                <button
+                                    type="button"
+                                    class="multi-select-toggle"
+                                    id="classSubjectsToggle"
+                                    disabled
+                                >
+                                    <span id="classSubjectsToggleText">
+                                        Select a section first
+                                    </span>
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                </button>
+
+                                <div class="multi-select-panel" id="classSubjectsPanel"></div>
+
+                            </div>
+                            <small class="field-error" id="classSubjectsError">
+                                Please select at least one subject.
+                            </small>
+                        </label>
+
+                        <label class="full-width dropdown-field" id="classTeachersField">
+                            Teachers
+                            <span class="field-hint">Loaded from Teacher Management</span>
+                            <div class="multi-select" id="classTeachersSelect">
+
+                                <button
+                                    type="button"
+                                    class="multi-select-toggle"
+                                    id="classTeachersToggle"
+                                    disabled
+                                >
+                                    <span id="classTeachersToggleText">
+                                        Select a section first
+                                    </span>
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                </button>
+
+                                <div class="multi-select-panel" id="classTeachersPanel"></div>
+
+                            </div>
+                            <small class="field-error" id="classTeachersError">
+                                Please select at least one teacher.
+                            </small>
+                        </label>
+
+                    </div>
+
+                    <div class="modal-actions">
+                        <button class="outline-btn" id="clearClassAssignmentBtn" type="button">
+                            Clear
+                        </button>
+                        <button class="primary-btn" id="saveClassAssignmentBtn" type="button">
+                            <i class="fa-solid fa-check"></i>
+                            Save Assignment
+                        </button>
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="card-header">
+                        <div>
+                            <h3>Section Assignments</h3>
+                            <p>Subjects and teachers currently assigned per section.</p>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table id="classAssignmentTable">
+                            <thead>
+                                <tr>
+                                    <th>Section</th>
+                                    <th>Subjects</th>
+                                    <th>Teachers</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="classAssignmentTableBody">
+                                <tr id="classAssignmentEmptyRow">
+                                    <td colspan="4" class="empty-table-row">
+                                        No assignments yet. Select a section above to get started.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
 
                 </div>
@@ -951,6 +1094,7 @@
                     </div>
 
                     <div class="syllabus-tabs" id="syllabusTabs">
+                        <button class="syllabus-tab" data-syllabus="jhs-core">Grades 7-10 &middot; JHS Core</button>
                         <button class="syllabus-tab active" data-syllabus="g11-asshc">Grade 11 &middot; ASSHC</button>
                         <button class="syllabus-tab" data-syllabus="g11-bec">Grade 11 &middot; Business & Entrep.</button>
                         <button class="syllabus-tab" data-syllabus="g11-stem">Grade 11 &middot; STEM</button>
@@ -959,6 +1103,40 @@
                         <button class="syllabus-tab" data-syllabus="g12-humss">Grade 12 &middot; HUMSS</button>
                         <button class="syllabus-tab" data-syllabus="g12-abm">Grade 12 &middot; ABM</button>
                         <button class="syllabus-tab" data-syllabus="g12-techpro">Grade 12 &middot; TechPro</button>
+                    </div>
+
+
+                    <!-- JHS CORE -->
+                    <div class="syllabus-panel" id="syllabus-jhs-core">
+
+                        <div class="syllabus-panel-header">
+                            <span class="status active">Junior High School</span>
+                            <h3>Core Learning Areas</h3>
+                            <p>Grades 7-10 &middot; School Year 2026-2027</p>
+                        </div>
+
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Subject</th>
+                                        <th>Required No. of Hours</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="syllabus-group-row"><td colspan="2">Core Subjects</td></tr>
+                                    <tr><td>English</td><td>160</td></tr>
+                                    <tr><td>Filipino</td><td>160</td></tr>
+                                    <tr><td>Mathematics</td><td>160</td></tr>
+                                    <tr><td>Science</td><td>160</td></tr>
+                                    <tr><td>Araling Panlipunan</td><td>160</td></tr>
+                                    <tr><td>Edukasyon sa Pagpapakatao (EsP)</td><td>80</td></tr>
+                                    <tr><td>MAPEH</td><td>160</td></tr>
+                                    <tr><td>Technology and Livelihood Education (TLE)</td><td>160</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
                     </div>
 
 

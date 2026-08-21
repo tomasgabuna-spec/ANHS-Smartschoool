@@ -1692,12 +1692,41 @@ td {
     cursor: pointer;
 }
 
-.multi-select-toggle #gradeSectionToggleText {
+.multi-select-toggle span {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 
     padding-right: 8px;
+}
+
+.multi-select-toggle:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    background: #f9fafb;
+}
+
+.field-hint {
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--muted);
+
+    margin-left: 4px;
+}
+
+.dropdown-field.field-invalid select {
+    border-color: #dc2626;
+}
+
+.empty-table-row {
+    text-align: center;
+    color: var(--muted);
+}
+
+.assignment-chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
 }
 
 .multi-select-toggle i {

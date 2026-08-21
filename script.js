@@ -1095,6 +1095,529 @@ function resetGradeSectionSelect() {
 
 
 /* ================================
+   CLASS & SUBJECT ASSIGNMENT
+   (Section -> Syllabus subjects,
+    Section -> Teacher Management)
+================================ */
+
+/* Maps each section to the syllabus panel that
+   holds its subjects, so subjects always come
+   from the Syllabus module (single source of truth). */
+const SECTION_SYLLABUS_MAP = {
+    "Grade 7 - Rizal": "jhs-core",
+    "Grade 7 - Bonifacio": "jhs-core",
+    "Grade 8 - Mabini": "jhs-core",
+    "Grade 8 - Aguinaldo": "jhs-core",
+    "Grade 9 - Luna": "jhs-core",
+    "Grade 9 - Del Pilar": "jhs-core",
+    "Grade 10 - Rizal": "jhs-core",
+    "Grade 10 - Bonifacio": "jhs-core",
+    "Grade 11 - STEM A": "g11-stem",
+    "Grade 11 - ABM A": "g11-bec",
+    "Grade 11 - HUMSS A": "g11-asshc",
+    "Grade 12 - STEM A": "g12-stem",
+    "Grade 12 - ABM A": "g12-abm"
+};
+
+
+function getSyllabusSubjectGroups(syllabusKey) {
+
+    const panel =
+        document.getElementById(`syllabus-${syllabusKey}`);
+
+    if (!panel) return [];
+
+    const rows =
+        Array.from(panel.querySelectorAll("table tbody tr"));
+
+    const groups = [];
+    let currentGroup = null;
+
+    rows.forEach(row => {
+
+        if (row.classList.contains("syllabus-group-row")) {
+
+            currentGroup = {
+                title: row.textContent.trim(),
+                subjects: []
+            };
+
+            groups.push(currentGroup);
+
+        } else {
+
+            const subjectName =
+                row.querySelector("td")
+                    ? row.querySelector("td").textContent.trim()
+                    : "";
+
+            if (!subjectName) return;
+
+            if (!currentGroup) {
+                currentGroup = { title: "Subjects", subjects: [] };
+                groups.push(currentGroup);
+            }
+
+            currentGroup.subjects.push(subjectName);
+
+        }
+
+    });
+
+    return groups;
+
+}
+
+
+/* Reads teachers straight from the Teacher Management
+   table, grouped by department. */
+function getTeachersFromTeacherModule() {
+
+    const rows =
+        Array.from(
+            document.querySelectorAll("#teacherTable tbody tr")
+        );
+
+    const byDepartment = {};
+
+    rows.forEach(row => {
+
+        const cells = row.querySelectorAll("td");
+
+        if (!cells.length) return;
+
+        const name = cells[0].textContent.trim();
+
+        const department =
+            row.getAttribute("data-department") || "Other";
+
+        if (!byDepartment[department]) {
+            byDepartment[department] = [];
+        }
+
+        byDepartment[department].push(name);
+
+    });
+
+    return byDepartment;
+
+}
+
+
+const classSectionSelect =
+    document.getElementById("classSectionSelect");
+
+const classSectionField =
+    document.getElementById("classSectionField");
+
+const classSubjectsSelect =
+    document.getElementById("classSubjectsSelect");
+
+const classSubjectsToggle =
+    document.getElementById("classSubjectsToggle");
+
+const classSubjectsToggleText =
+    document.getElementById("classSubjectsToggleText");
+
+const classSubjectsPanel =
+    document.getElementById("classSubjectsPanel");
+
+const classSubjectsField =
+    document.getElementById("classSubjectsField");
+
+const classTeachersSelect =
+    document.getElementById("classTeachersSelect");
+
+const classTeachersToggle =
+    document.getElementById("classTeachersToggle");
+
+const classTeachersToggleText =
+    document.getElementById("classTeachersToggleText");
+
+const classTeachersPanel =
+    document.getElementById("classTeachersPanel");
+
+const classTeachersField =
+    document.getElementById("classTeachersField");
+
+const classAssignmentTableBody =
+    document.getElementById("classAssignmentTableBody");
+
+const classAssignmentEmptyRow =
+    document.getElementById("classAssignmentEmptyRow");
+
+const classAssignmentsCount =
+    document.getElementById("classAssignmentsCount");
+
+
+function getCheckedValues(panel) {
+
+    if (!panel) return [];
+
+    return Array.from(
+        panel.querySelectorAll("input[type='checkbox']:checked")
+    ).map(checkbox => checkbox.value);
+
+}
+
+
+function updateMultiSelectToggleText(panel, toggleTextEl, placeholder, noun) {
+
+    const selected = getCheckedValues(panel);
+
+    if (selected.length === 0) {
+        toggleTextEl.textContent = placeholder;
+    } else if (selected.length === 1) {
+        toggleTextEl.textContent = selected[0];
+    } else {
+        toggleTextEl.textContent = `${selected.length} ${noun} selected`;
+    }
+
+}
+
+
+function populateSubjectsPanel(syllabusKey) {
+
+    const groups =
+        getSyllabusSubjectGroups(syllabusKey);
+
+    if (!groups.length) {
+
+        classSubjectsPanel.innerHTML =
+            "<p class=\"multi-select-group-title\">No subjects found in Syllabus for this section.</p>";
+
+        return;
+
+    }
+
+    classSubjectsPanel.innerHTML =
+        groups.map(group => `
+            <div class="multi-select-group">
+                <p class="multi-select-group-title">${group.title}</p>
+                ${group.subjects.map(subject => `
+                    <label class="multi-select-option">
+                        <input type="checkbox" value="${subject}">
+                        ${subject}
+                    </label>
+                `).join("")}
+            </div>
+        `).join("");
+
+}
+
+
+function populateTeachersPanel() {
+
+    const byDepartment =
+        getTeachersFromTeacherModule();
+
+    const departments =
+        Object.keys(byDepartment);
+
+    if (!departments.length) {
+
+        classTeachersPanel.innerHTML =
+            "<p class=\"multi-select-group-title\">No teachers found in Teacher Management.</p>";
+
+        return;
+
+    }
+
+    classTeachersPanel.innerHTML =
+        departments.map(department => `
+            <div class="multi-select-group">
+                <p class="multi-select-group-title">${department}</p>
+                ${byDepartment[department].map(name => `
+                    <label class="multi-select-option">
+                        <input type="checkbox" value="${name}">
+                        ${name}
+                    </label>
+                `).join("")}
+            </div>
+        `).join("");
+
+}
+
+
+function initClassMultiSelect(select, toggle, panel) {
+
+    if (!toggle || !panel || !select) return;
+
+    toggle.addEventListener("click", function(event) {
+
+        event.stopPropagation();
+
+        if (toggle.disabled) return;
+
+        select.classList.toggle("open");
+
+    });
+
+    panel.addEventListener("click", function(event) {
+        event.stopPropagation();
+    });
+
+}
+
+
+initClassMultiSelect(classSubjectsSelect, classSubjectsToggle, classSubjectsPanel);
+initClassMultiSelect(classTeachersSelect, classTeachersToggle, classTeachersPanel);
+
+
+if (classSubjectsPanel) {
+
+    classSubjectsPanel.addEventListener("change", function(event) {
+
+        if (event.target.matches("input[type='checkbox']")) {
+
+            updateMultiSelectToggleText(
+                classSubjectsPanel,
+                classSubjectsToggleText,
+                "Select subjects",
+                "subjects"
+            );
+
+            if (classSubjectsField) {
+                classSubjectsField.classList.remove("field-invalid");
+            }
+
+        }
+
+    });
+
+}
+
+
+if (classTeachersPanel) {
+
+    classTeachersPanel.addEventListener("change", function(event) {
+
+        if (event.target.matches("input[type='checkbox']")) {
+
+            updateMultiSelectToggleText(
+                classTeachersPanel,
+                classTeachersToggleText,
+                "Select teachers",
+                "teachers"
+            );
+
+            if (classTeachersField) {
+                classTeachersField.classList.remove("field-invalid");
+            }
+
+        }
+
+    });
+
+}
+
+
+document.addEventListener("click", function(event) {
+
+    [classSubjectsSelect, classTeachersSelect].forEach(select => {
+
+        if (
+            select &&
+            select.classList.contains("open") &&
+            !select.contains(event.target)
+        ) {
+            select.classList.remove("open");
+        }
+
+    });
+
+});
+
+
+if (classSectionSelect) {
+
+    classSectionSelect.addEventListener("change", function() {
+
+        const section = classSectionSelect.value;
+
+        const syllabusKey = SECTION_SYLLABUS_MAP[section];
+
+        if (classSectionField) {
+            classSectionField.classList.remove("field-invalid");
+        }
+
+        populateSubjectsPanel(syllabusKey);
+        populateTeachersPanel();
+
+        [classSubjectsToggle, classTeachersToggle].forEach(toggle => {
+            toggle.disabled = false;
+        });
+
+        classSubjectsToggleText.textContent = "Select subjects";
+        classTeachersToggleText.textContent = "Select teachers";
+
+        [classSubjectsSelect, classTeachersSelect].forEach(select => {
+            select.classList.remove("open");
+        });
+
+        [classSubjectsField, classTeachersField].forEach(field => {
+            if (field) field.classList.remove("field-invalid");
+        });
+
+    });
+
+}
+
+
+function resetClassAssignmentForm() {
+
+    if (classSectionSelect) classSectionSelect.value = "";
+
+    [classSubjectsPanel, classTeachersPanel].forEach(panel => {
+        if (panel) panel.innerHTML = "";
+    });
+
+    [classSubjectsToggle, classTeachersToggle].forEach(toggle => {
+        if (toggle) toggle.disabled = true;
+    });
+
+    if (classSubjectsToggleText) {
+        classSubjectsToggleText.textContent = "Select a section first";
+    }
+
+    if (classTeachersToggleText) {
+        classTeachersToggleText.textContent = "Select a section first";
+    }
+
+    [classSectionField, classSubjectsField, classTeachersField].forEach(field => {
+        if (field) field.classList.remove("field-invalid");
+    });
+
+}
+
+
+const clearClassAssignmentBtn =
+    document.getElementById("clearClassAssignmentBtn");
+
+if (clearClassAssignmentBtn) {
+
+    clearClassAssignmentBtn.addEventListener(
+        "click",
+        resetClassAssignmentForm
+    );
+
+}
+
+
+function buildChipList(values) {
+
+    return `
+        <div class="assignment-chip-list">
+            ${values.map(value => `
+                <span class="file-chip">${value}</span>
+            `).join("")}
+        </div>
+    `;
+
+}
+
+
+const saveClassAssignmentBtn =
+    document.getElementById("saveClassAssignmentBtn");
+
+if (saveClassAssignmentBtn) {
+
+    saveClassAssignmentBtn.addEventListener("click", function() {
+
+        const section = classSectionSelect ? classSectionSelect.value : "";
+
+        const subjects = getCheckedValues(classSubjectsPanel);
+        const teachers = getCheckedValues(classTeachersPanel);
+
+        let valid = true;
+
+        if (!section) {
+            if (classSectionField) classSectionField.classList.add("field-invalid");
+            valid = false;
+        }
+
+        if (!subjects.length) {
+            if (classSubjectsField) classSubjectsField.classList.add("field-invalid");
+            valid = false;
+        }
+
+        if (!teachers.length) {
+            if (classTeachersField) classTeachersField.classList.add("field-invalid");
+            valid = false;
+        }
+
+        if (!valid) return;
+
+        if (classAssignmentEmptyRow) {
+            classAssignmentEmptyRow.remove();
+        }
+
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${section}</td>
+            <td>${buildChipList(subjects)}</td>
+            <td>${buildChipList(teachers)}</td>
+            <td>
+                <button class="table-btn" type="button" title="Remove">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </td>
+        `;
+
+        row.querySelector(".table-btn").addEventListener("click", function() {
+
+            row.remove();
+
+            if (classAssignmentsCount) {
+                classAssignmentsCount.textContent =
+                    Math.max(0, parseInt(classAssignmentsCount.textContent, 10) - 1);
+            }
+
+            if (!classAssignmentTableBody.querySelector("tr")) {
+                classAssignmentTableBody.appendChild(classAssignmentEmptyRow);
+            }
+
+        });
+
+        classAssignmentTableBody.appendChild(row);
+
+        if (classAssignmentsCount) {
+            classAssignmentsCount.textContent =
+                parseInt(classAssignmentsCount.textContent, 10) + 1;
+        }
+
+        resetClassAssignmentForm();
+
+    });
+
+}
+
+
+const addClassBtn =
+    document.getElementById("addClassBtn");
+
+if (addClassBtn) {
+
+    addClassBtn.addEventListener("click", function() {
+
+        const card =
+            document.getElementById("classAssignmentCard");
+
+        if (card) {
+            card.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+
+        if (classSectionSelect) {
+            classSectionSelect.focus();
+        }
+
+    });
+
+}
+
+
+/* ================================
    LESSON PLAN FILE UPLOAD
 ================================ */
 
