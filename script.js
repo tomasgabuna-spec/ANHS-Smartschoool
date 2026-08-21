@@ -1098,11 +1098,16 @@ function resetGradeSectionSelect() {
    CLASS & SUBJECT ASSIGNMENT
    (Section -> Syllabus subjects,
     Section -> Teacher Management)
+   Sections and each section's
+   subject list are editable here.
 ================================ */
 
+const GRADE_ORDER =
+    ["Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"];
+
 /* Maps each section to the syllabus panel that
-   holds its subjects, so subjects always come
-   from the Syllabus module (single source of truth). */
+   seeds its starting subject list. Once seeded,
+   a section's subjects can be edited independently. */
 const SECTION_SYLLABUS_MAP = {
     "Grade 7 - Rizal": "jhs-core",
     "Grade 7 - Bonifacio": "jhs-core",
@@ -1119,52 +1124,38 @@ const SECTION_SYLLABUS_MAP = {
     "Grade 12 - ABM A": "g12-abm"
 };
 
+/* section value -> array of subject names (editable) */
+let subjectsStore = {};
 
-function getSyllabusSubjectGroups(syllabusKey) {
+
+function getSyllabusSubjectNames(syllabusKey) {
 
     const panel =
         document.getElementById(`syllabus-${syllabusKey}`);
 
     if (!panel) return [];
 
-    const rows =
-        Array.from(panel.querySelectorAll("table tbody tr"));
+    return Array.from(panel.querySelectorAll("table tbody tr"))
+        .filter(row => !row.classList.contains("syllabus-group-row"))
+        .map(row => {
+            const cell = row.querySelector("td");
+            return cell ? cell.textContent.trim() : "";
+        })
+        .filter(Boolean);
 
-    const groups = [];
-    let currentGroup = null;
+}
 
-    rows.forEach(row => {
 
-        if (row.classList.contains("syllabus-group-row")) {
+function getSubjectsForSection(section) {
 
-            currentGroup = {
-                title: row.textContent.trim(),
-                subjects: []
-            };
+    if (subjectsStore[section]) return subjectsStore[section];
 
-            groups.push(currentGroup);
+    const syllabusKey = SECTION_SYLLABUS_MAP[section];
 
-        } else {
+    subjectsStore[section] =
+        syllabusKey ? getSyllabusSubjectNames(syllabusKey) : [];
 
-            const subjectName =
-                row.querySelector("td")
-                    ? row.querySelector("td").textContent.trim()
-                    : "";
-
-            if (!subjectName) return;
-
-            if (!currentGroup) {
-                currentGroup = { title: "Subjects", subjects: [] };
-                groups.push(currentGroup);
-            }
-
-            currentGroup.subjects.push(subjectName);
-
-        }
-
-    });
-
-    return groups;
+    return subjectsStore[section];
 
 }
 
@@ -1210,6 +1201,15 @@ const classSectionSelect =
 const classSectionField =
     document.getElementById("classSectionField");
 
+const addSectionBtn =
+    document.getElementById("addSectionBtn");
+
+const editSectionBtn =
+    document.getElementById("editSectionBtn");
+
+const deleteSectionBtn =
+    document.getElementById("deleteSectionBtn");
+
 const classSubjectsSelect =
     document.getElementById("classSubjectsSelect");
 
@@ -1222,8 +1222,17 @@ const classSubjectsToggleText =
 const classSubjectsPanel =
     document.getElementById("classSubjectsPanel");
 
+const classSubjectsList =
+    document.getElementById("classSubjectsList");
+
 const classSubjectsField =
     document.getElementById("classSubjectsField");
+
+const newSubjectInput =
+    document.getElementById("newSubjectInput");
+
+const addSubjectBtn =
+    document.getElementById("addSubjectBtn");
 
 const classTeachersSelect =
     document.getElementById("classTeachersSelect");
@@ -1246,24 +1255,85 @@ const classAssignmentTableBody =
 const classAssignmentEmptyRow =
     document.getElementById("classAssignmentEmptyRow");
 
-const classAssignmentsCount =
-    document.getElementById("classAssignmentsCount");
+
+/* ---------- Sections: build editable data from the
+   initial hardcoded <select>, then re-render from JS ---------- */
+
+let sectionsData = [];
+
+function loadSectionsDataFromDOM() {
+
+    sectionsData = [];
+
+    if (!classSectionSelect) return;
+
+    classSectionSelect.querySelectorAll("optgroup").forEach(group => {
+
+        const grade = group.getAttribute("label");
+
+        group.querySelectorAll("option").forEach(option => {
+            sectionsData.push({ grade, value: option.value });
+        });
+
+    });
+
+}
 
 
-function getCheckedValues(panel) {
+function renderSectionSelect(selectedValue) {
 
-    if (!panel) return [];
+    if (!classSectionSelect) return;
+
+    const grades = [...GRADE_ORDER];
+
+    sectionsData.forEach(entry => {
+        if (!grades.includes(entry.grade)) grades.push(entry.grade);
+    });
+
+    let html =
+        `<option value="" disabled ${selectedValue ? "" : "selected"}>Select section</option>`;
+
+    grades.forEach(grade => {
+
+        const opts =
+            sectionsData.filter(entry => entry.grade === grade);
+
+        if (!opts.length) return;
+
+        html += `<optgroup label="${grade}">`;
+
+        opts.forEach(entry => {
+            html += `<option value="${entry.value}" ${entry.value === selectedValue ? "selected" : ""}>${entry.value}</option>`;
+        });
+
+        html += "</optgroup>";
+
+    });
+
+    classSectionSelect.innerHTML = html;
+
+}
+
+
+loadSectionsDataFromDOM();
+
+
+/* ---------- Subjects: render + edit per selected section ---------- */
+
+function getCheckedValues(container) {
+
+    if (!container) return [];
 
     return Array.from(
-        panel.querySelectorAll("input[type='checkbox']:checked")
+        container.querySelectorAll("input[type='checkbox']:checked")
     ).map(checkbox => checkbox.value);
 
 }
 
 
-function updateMultiSelectToggleText(panel, toggleTextEl, placeholder, noun) {
+function updateMultiSelectToggleText(container, toggleTextEl, placeholder, noun) {
 
-    const selected = getCheckedValues(panel);
+    const selected = getCheckedValues(container);
 
     if (selected.length === 0) {
         toggleTextEl.textContent = placeholder;
@@ -1276,30 +1346,38 @@ function updateMultiSelectToggleText(panel, toggleTextEl, placeholder, noun) {
 }
 
 
-function populateSubjectsPanel(syllabusKey) {
+function renderSubjectsList(section) {
 
-    const groups =
-        getSyllabusSubjectGroups(syllabusKey);
+    if (!classSubjectsList) return;
 
-    if (!groups.length) {
+    if (!section) {
+        classSubjectsList.innerHTML = "";
+        return;
+    }
 
-        classSubjectsPanel.innerHTML =
-            "<p class=\"multi-select-group-title\">No subjects found in Syllabus for this section.</p>";
+    const previouslyChecked = getCheckedValues(classSubjectsPanel);
+
+    const subjects = getSubjectsForSection(section);
+
+    if (!subjects.length) {
+
+        classSubjectsList.innerHTML =
+            "<p class=\"multi-select-group-title\">No subjects yet - add one above.</p>";
 
         return;
 
     }
 
-    classSubjectsPanel.innerHTML =
-        groups.map(group => `
-            <div class="multi-select-group">
-                <p class="multi-select-group-title">${group.title}</p>
-                ${group.subjects.map(subject => `
-                    <label class="multi-select-option">
-                        <input type="checkbox" value="${subject}">
-                        ${subject}
-                    </label>
-                `).join("")}
+    classSubjectsList.innerHTML =
+        subjects.map(subject => `
+            <div class="multi-select-option" data-subject="${subject}">
+                <label class="multi-select-option-label">
+                    <input type="checkbox" value="${subject}" ${previouslyChecked.includes(subject) ? "checked" : ""}>
+                    <span>${subject}</span>
+                </label>
+                <button type="button" class="multi-select-option-remove" title="Remove subject">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
         `).join("");
 
@@ -1307,6 +1385,8 @@ function populateSubjectsPanel(syllabusKey) {
 
 
 function populateTeachersPanel() {
+
+    if (!classTeachersPanel) return;
 
     const byDepartment =
         getTeachersFromTeacherModule();
@@ -1354,7 +1434,11 @@ function initClassMultiSelect(select, toggle, panel) {
     });
 
     panel.addEventListener("click", function(event) {
-        event.stopPropagation();
+
+        if (!event.target.closest("input, button")) {
+            event.stopPropagation();
+        }
+
     });
 
 }
@@ -1381,6 +1465,87 @@ if (classSubjectsPanel) {
                 classSubjectsField.classList.remove("field-invalid");
             }
 
+        }
+
+    });
+
+    classSubjectsPanel.addEventListener("click", function(event) {
+
+        const removeBtn = event.target.closest(".multi-select-option-remove");
+
+        if (!removeBtn) return;
+
+        event.stopPropagation();
+
+        const section = classSectionSelect ? classSectionSelect.value : "";
+
+        if (!section) return;
+
+        const row = removeBtn.closest("[data-subject]");
+
+        const subject = row ? row.getAttribute("data-subject") : "";
+
+        if (!subject) return;
+
+        subjectsStore[section] =
+            (subjectsStore[section] || []).filter(item => item !== subject);
+
+        renderSubjectsList(section);
+
+        updateMultiSelectToggleText(
+            classSubjectsPanel,
+            classSubjectsToggleText,
+            "Select subjects",
+            "subjects"
+        );
+
+    });
+
+}
+
+
+if (addSubjectBtn) {
+
+    addSubjectBtn.addEventListener("click", function(event) {
+
+        event.stopPropagation();
+
+        const section = classSectionSelect ? classSectionSelect.value : "";
+
+        if (!section || !newSubjectInput) return;
+
+        const name = newSubjectInput.value.trim();
+
+        if (!name) return;
+
+        const existing = subjectsStore[section] || [];
+
+        if (existing.some(item => item.toLowerCase() === name.toLowerCase())) {
+            alert("That subject is already in the list.");
+            return;
+        }
+
+        subjectsStore[section] = [...existing, name];
+
+        newSubjectInput.value = "";
+
+        renderSubjectsList(section);
+
+    });
+
+}
+
+if (newSubjectInput) {
+
+    newSubjectInput.addEventListener("click", function(event) {
+        event.stopPropagation();
+    });
+
+    newSubjectInput.addEventListener("keydown", function(event) {
+
+        if (event.key === "Enter") {
+            event.preventDefault();
+            addSubjectBtn.click();
         }
 
     });
@@ -1429,35 +1594,41 @@ document.addEventListener("click", function(event) {
 });
 
 
+function enableAssignmentInputs(section) {
+
+    [classSubjectsToggle, classTeachersToggle].forEach(toggle => {
+        if (toggle) toggle.disabled = false;
+    });
+
+    if (newSubjectInput) newSubjectInput.disabled = false;
+    if (addSubjectBtn) addSubjectBtn.disabled = false;
+
+    if (classSubjectsToggleText) classSubjectsToggleText.textContent = "Select subjects";
+    if (classTeachersToggleText) classTeachersToggleText.textContent = "Select teachers";
+
+    renderSubjectsList(section);
+    populateTeachersPanel();
+
+    [classSubjectsSelect, classTeachersSelect].forEach(select => {
+        if (select) select.classList.remove("open");
+    });
+
+    [classSubjectsField, classTeachersField].forEach(field => {
+        if (field) field.classList.remove("field-invalid");
+    });
+
+}
+
+
 if (classSectionSelect) {
 
     classSectionSelect.addEventListener("change", function() {
-
-        const section = classSectionSelect.value;
-
-        const syllabusKey = SECTION_SYLLABUS_MAP[section];
 
         if (classSectionField) {
             classSectionField.classList.remove("field-invalid");
         }
 
-        populateSubjectsPanel(syllabusKey);
-        populateTeachersPanel();
-
-        [classSubjectsToggle, classTeachersToggle].forEach(toggle => {
-            toggle.disabled = false;
-        });
-
-        classSubjectsToggleText.textContent = "Select subjects";
-        classTeachersToggleText.textContent = "Select teachers";
-
-        [classSubjectsSelect, classTeachersSelect].forEach(select => {
-            select.classList.remove("open");
-        });
-
-        [classSubjectsField, classTeachersField].forEach(field => {
-            if (field) field.classList.remove("field-invalid");
-        });
+        enableAssignmentInputs(classSectionSelect.value);
 
     });
 
@@ -1468,13 +1639,15 @@ function resetClassAssignmentForm() {
 
     if (classSectionSelect) classSectionSelect.value = "";
 
-    [classSubjectsPanel, classTeachersPanel].forEach(panel => {
-        if (panel) panel.innerHTML = "";
-    });
+    if (classSubjectsList) classSubjectsList.innerHTML = "";
+    if (classTeachersPanel) classTeachersPanel.innerHTML = "";
 
     [classSubjectsToggle, classTeachersToggle].forEach(toggle => {
         if (toggle) toggle.disabled = true;
     });
+
+    if (newSubjectInput) newSubjectInput.disabled = true;
+    if (addSubjectBtn) addSubjectBtn.disabled = true;
 
     if (classSubjectsToggleText) {
         classSubjectsToggleText.textContent = "Select a section first";
@@ -1491,18 +1664,115 @@ function resetClassAssignmentForm() {
 }
 
 
-const clearClassAssignmentBtn =
-    document.getElementById("clearClassAssignmentBtn");
+resetClassAssignmentForm();
 
-if (clearClassAssignmentBtn) {
 
-    clearClassAssignmentBtn.addEventListener(
-        "click",
-        resetClassAssignmentForm
-    );
+/* ---------- Add / rename / delete sections ---------- */
+
+if (addSectionBtn) {
+
+    addSectionBtn.addEventListener("click", function() {
+
+        const grade = window.prompt(
+            "Grade level for the new section (e.g. Grade 7, Grade 11):"
+        );
+
+        if (!grade || !grade.trim()) return;
+
+        const name = window.prompt(
+            "Section name (e.g. Newton, STEM B):"
+        );
+
+        if (!name || !name.trim()) return;
+
+        const value = `${grade.trim()} - ${name.trim()}`;
+
+        if (sectionsData.some(entry => entry.value === value)) {
+            alert("That section already exists.");
+            return;
+        }
+
+        sectionsData.push({ grade: grade.trim(), value });
+
+        renderSectionSelect(value);
+
+        if (classSectionField) {
+            classSectionField.classList.remove("field-invalid");
+        }
+
+        enableAssignmentInputs(value);
+
+    });
 
 }
 
+
+if (editSectionBtn) {
+
+    editSectionBtn.addEventListener("click", function() {
+
+        const current = classSectionSelect ? classSectionSelect.value : "";
+
+        if (!current) {
+            alert("Select a section first.");
+            return;
+        }
+
+        const newName = window.prompt("Rename section:", current);
+
+        if (!newName || !newName.trim() || newName.trim() === current) return;
+
+        const trimmedName = newName.trim();
+
+        const entry = sectionsData.find(item => item.value === current);
+
+        if (entry) entry.value = trimmedName;
+
+        if (subjectsStore[current]) {
+            subjectsStore[trimmedName] = subjectsStore[current];
+            delete subjectsStore[current];
+        }
+
+        if (SECTION_SYLLABUS_MAP[current]) {
+            SECTION_SYLLABUS_MAP[trimmedName] = SECTION_SYLLABUS_MAP[current];
+            delete SECTION_SYLLABUS_MAP[current];
+        }
+
+        renderSectionSelect(trimmedName);
+        enableAssignmentInputs(trimmedName);
+
+    });
+
+}
+
+
+if (deleteSectionBtn) {
+
+    deleteSectionBtn.addEventListener("click", function() {
+
+        const current = classSectionSelect ? classSectionSelect.value : "";
+
+        if (!current) {
+            alert("Select a section first.");
+            return;
+        }
+
+        if (!window.confirm(`Delete "${current}"? This cannot be undone.`)) return;
+
+        sectionsData = sectionsData.filter(entry => entry.value !== current);
+
+        delete subjectsStore[current];
+        delete SECTION_SYLLABUS_MAP[current];
+
+        renderSectionSelect("");
+        resetClassAssignmentForm();
+
+    });
+
+}
+
+
+/* ---------- Save assignment ---------- */
 
 function buildChipList(values) {
 
@@ -1513,6 +1783,19 @@ function buildChipList(values) {
             `).join("")}
         </div>
     `;
+
+}
+
+
+const clearClassAssignmentBtn =
+    document.getElementById("clearClassAssignmentBtn");
+
+if (clearClassAssignmentBtn) {
+
+    clearClassAssignmentBtn.addEventListener(
+        "click",
+        resetClassAssignmentForm
+    );
 
 }
 
@@ -1569,11 +1852,6 @@ if (saveClassAssignmentBtn) {
 
             row.remove();
 
-            if (classAssignmentsCount) {
-                classAssignmentsCount.textContent =
-                    Math.max(0, parseInt(classAssignmentsCount.textContent, 10) - 1);
-            }
-
             if (!classAssignmentTableBody.querySelector("tr")) {
                 classAssignmentTableBody.appendChild(classAssignmentEmptyRow);
             }
@@ -1581,11 +1859,6 @@ if (saveClassAssignmentBtn) {
         });
 
         classAssignmentTableBody.appendChild(row);
-
-        if (classAssignmentsCount) {
-            classAssignmentsCount.textContent =
-                parseInt(classAssignmentsCount.textContent, 10) + 1;
-        }
 
         resetClassAssignmentForm();
 

@@ -925,34 +925,45 @@
 
                         <label class="full-width dropdown-field" id="classSectionField">
                             Section
-                            <select id="classSectionSelect">
-                                <option value="" disabled selected>Select section</option>
-                                <optgroup label="Grade 7">
-                                    <option value="Grade 7 - Rizal">Grade 7 - Rizal</option>
-                                    <option value="Grade 7 - Bonifacio">Grade 7 - Bonifacio</option>
-                                </optgroup>
-                                <optgroup label="Grade 8">
-                                    <option value="Grade 8 - Mabini">Grade 8 - Mabini</option>
-                                    <option value="Grade 8 - Aguinaldo">Grade 8 - Aguinaldo</option>
-                                </optgroup>
-                                <optgroup label="Grade 9">
-                                    <option value="Grade 9 - Luna">Grade 9 - Luna</option>
-                                    <option value="Grade 9 - Del Pilar">Grade 9 - Del Pilar</option>
-                                </optgroup>
-                                <optgroup label="Grade 10">
-                                    <option value="Grade 10 - Rizal">Grade 10 - Rizal</option>
-                                    <option value="Grade 10 - Bonifacio">Grade 10 - Bonifacio</option>
-                                </optgroup>
-                                <optgroup label="Grade 11">
-                                    <option value="Grade 11 - STEM A">Grade 11 - STEM A</option>
-                                    <option value="Grade 11 - ABM A">Grade 11 - ABM A</option>
-                                    <option value="Grade 11 - HUMSS A">Grade 11 - HUMSS A</option>
-                                </optgroup>
-                                <optgroup label="Grade 12">
-                                    <option value="Grade 12 - STEM A">Grade 12 - STEM A</option>
-                                    <option value="Grade 12 - ABM A">Grade 12 - ABM A</option>
-                                </optgroup>
-                            </select>
+                            <div class="field-with-actions">
+                                <select id="classSectionSelect">
+                                    <option value="" disabled selected>Select section</option>
+                                    <optgroup label="Grade 7">
+                                        <option value="Grade 7 - Rizal">Grade 7 - Rizal</option>
+                                        <option value="Grade 7 - Bonifacio">Grade 7 - Bonifacio</option>
+                                    </optgroup>
+                                    <optgroup label="Grade 8">
+                                        <option value="Grade 8 - Mabini">Grade 8 - Mabini</option>
+                                        <option value="Grade 8 - Aguinaldo">Grade 8 - Aguinaldo</option>
+                                    </optgroup>
+                                    <optgroup label="Grade 9">
+                                        <option value="Grade 9 - Luna">Grade 9 - Luna</option>
+                                        <option value="Grade 9 - Del Pilar">Grade 9 - Del Pilar</option>
+                                    </optgroup>
+                                    <optgroup label="Grade 10">
+                                        <option value="Grade 10 - Rizal">Grade 10 - Rizal</option>
+                                        <option value="Grade 10 - Bonifacio">Grade 10 - Bonifacio</option>
+                                    </optgroup>
+                                    <optgroup label="Grade 11">
+                                        <option value="Grade 11 - STEM A">Grade 11 - STEM A</option>
+                                        <option value="Grade 11 - ABM A">Grade 11 - ABM A</option>
+                                        <option value="Grade 11 - HUMSS A">Grade 11 - HUMSS A</option>
+                                    </optgroup>
+                                    <optgroup label="Grade 12">
+                                        <option value="Grade 12 - STEM A">Grade 12 - STEM A</option>
+                                        <option value="Grade 12 - ABM A">Grade 12 - ABM A</option>
+                                    </optgroup>
+                                </select>
+                                <button class="table-btn" type="button" id="addSectionBtn" title="Add section">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                                <button class="table-btn" type="button" id="editSectionBtn" title="Rename selected section">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button class="table-btn" type="button" id="deleteSectionBtn" title="Delete selected section">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
                             <small class="field-error" id="classSectionError">
                                 Please select a section.
                             </small>
@@ -960,7 +971,7 @@
 
                         <label class="full-width dropdown-field" id="classSubjectsField">
                             Subjects
-                            <span class="field-hint">Loaded from Syllabus</span>
+                            <span class="field-hint">Loaded from Syllabus &middot; editable per section</span>
                             <div class="multi-select" id="classSubjectsSelect">
 
                                 <button
@@ -975,7 +986,15 @@
                                     <i class="fa-solid fa-chevron-down"></i>
                                 </button>
 
-                                <div class="multi-select-panel" id="classSubjectsPanel"></div>
+                                <div class="multi-select-panel" id="classSubjectsPanel">
+                                    <div class="multi-select-add-row">
+                                        <input type="text" id="newSubjectInput" placeholder="Add a subject...">
+                                        <button class="table-btn" type="button" id="addSubjectBtn" title="Add subject">
+                                            <i class="fa-solid fa-plus"></i>
+                                        </button>
+                                    </div>
+                                    <div id="classSubjectsList"></div>
+                                </div>
 
                             </div>
                             <small class="field-error" id="classSubjectsError">
