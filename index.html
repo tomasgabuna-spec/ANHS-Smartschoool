@@ -92,7 +92,8 @@
             </button>
 
             <p class="login-hint">
-                Demo credentials: <strong>admin</strong> / <strong>admin123</strong>
+                Admin: <strong>admin</strong> / <strong>admin123</strong><br>
+                Adviser: <strong>adviser1</strong> / <strong>adviser123</strong>
             </p>
 
         </form>
@@ -136,12 +137,12 @@
                 <span>Students</span>
             </a>
 
-            <a href="#" class="nav-item" data-page="teachers">
+            <a href="#" class="nav-item" data-page="teachers" id="navTeachers">
                 <i class="fa-solid fa-chalkboard-user"></i>
                 <span>Teachers</span>
             </a>
 
-            <a href="#" class="nav-item" data-page="classes">
+            <a href="#" class="nav-item" data-page="classes" id="navClasses">
                 <i class="fa-solid fa-book-open"></i>
                 <span>Classes & Subjects</span>
             </a>
@@ -173,24 +174,24 @@
                 <span>Announcements</span>
             </a>
 
-            <a href="#" class="nav-item" data-page="records">
+            <a href="#" class="nav-item" data-page="records" id="navRecords">
                 <i class="fa-solid fa-folder-open"></i>
                 <span>Student Records</span>
             </a>
 
-            <a href="#" class="nav-item" data-page="parents">
+            <a href="#" class="nav-item" data-page="parents" id="navParents">
                 <i class="fa-solid fa-people-group"></i>
                 <span>Parents / Guardians</span>
             </a>
 
-            <a href="#" class="nav-item" data-page="reports">
+            <a href="#" class="nav-item" data-page="reports" id="navReports">
                 <i class="fa-solid fa-chart-column"></i>
                 <span>Reports</span>
             </a>
 
             <p class="menu-title">SYSTEM</p>
 
-            <a href="#" class="nav-item" data-page="settings">
+            <a href="#" class="nav-item" data-page="settings" id="navSettings">
                 <i class="fa-solid fa-gear"></i>
                 <span>Settings</span>
             </a>
@@ -198,11 +199,11 @@
         </nav>
 
         <div class="sidebar-footer">
-            <div class="user-avatar">AD</div>
+            <div class="user-avatar" id="sidebarAvatar">AD</div>
 
             <div class="user-info">
-                <strong>Administrator</strong>
-                <span>School Admin</span>
+                <strong id="sidebarUserName">Administrator</strong>
+                <span id="sidebarUserRole">School Admin</span>
             </div>
 
             <button class="logout-btn" title="Logout">
@@ -244,13 +245,13 @@
 
                 <div class="profile">
 
-                    <div class="profile-avatar">
+                    <div class="profile-avatar" id="topbarAvatar">
                         AD
                     </div>
 
                     <div class="profile-details">
-                        <strong>Administrator</strong>
-                        <span>School Admin</span>
+                        <strong id="topbarUserName">Administrator</strong>
+                        <span id="topbarUserRole">School Admin</span>
                     </div>
 
                     <i class="fa-solid fa-chevron-down"></i>
@@ -631,8 +632,8 @@
                 <div class="page-header">
 
                     <div>
-                        <h2>Student Management</h2>
-                        <p>Manage student information and enrollment.</p>
+                        <h2 id="studentsPageTitle">Student Management</h2>
+                        <p id="studentsPageSubtitle">Manage student information and enrollment.</p>
                     </div>
 
                     <button class="primary-btn" id="addStudentBtn">
@@ -681,7 +682,7 @@
 
                             <tbody>
 
-                                <tr>
+                                <tr data-grade="Grade 11" data-section="STEM A">
                                     <td>ANHS-2026-001</td>
                                     <td>Juan Dela Cruz</td>
                                     <td>Grade 11</td>
@@ -698,7 +699,7 @@
                                     </td>
                                 </tr>
 
-                                <tr>
+                                <tr data-grade="Grade 11" data-section="ABM A">
                                     <td>ANHS-2026-002</td>
                                     <td>Maria Santos</td>
                                     <td>Grade 11</td>
@@ -715,7 +716,7 @@
                                     </td>
                                 </tr>
 
-                                <tr>
+                                <tr data-grade="Grade 10" data-section="Rizal">
                                     <td>ANHS-2026-003</td>
                                     <td>Pedro Reyes</td>
                                     <td>Grade 10</td>

@@ -7,8 +7,43 @@
    LOGIN / AUTHENTICATION
 ================================ */
 
-const DEMO_USERNAME = "admin";
-const DEMO_PASSWORD = "admin123";
+/* Demo accounts. In a real system these would be
+   verified against the school's database, with each
+   adviser account tied to their assigned advisory
+   section so they only encode their own students. */
+
+const DEMO_ACCOUNTS = [
+    {
+        username: "admin",
+        password: "admin123",
+        role: "admin",
+        name: "Administrator",
+        title: "School Admin",
+        initials: "AD"
+    },
+    {
+        username: "adviser1",
+        password: "adviser123",
+        role: "adviser",
+        name: "Mr. J. Santos",
+        title: "Adviser - Grade 11 STEM A",
+        initials: "JS",
+        grade: "Grade 11",
+        section: "STEM A"
+    },
+    {
+        username: "adviser2",
+        password: "adviser123",
+        role: "adviser",
+        name: "Ms. L. Cruz",
+        title: "Adviser - Grade 10 Rizal",
+        initials: "LC",
+        grade: "Grade 10",
+        section: "Rizal"
+    }
+];
+
+let currentUser = null;
 
 const loginPage =
     document.getElementById("loginPage");
@@ -28,6 +63,9 @@ const togglePassword =
 const loginPasswordInput =
     document.getElementById("loginPassword");
 
+const ADMIN_ONLY_PAGES =
+    ["navTeachers", "navClasses", "navRecords", "navParents", "navReports", "navSettings"];
+
 
 function showApp() {
 
@@ -44,9 +82,135 @@ function showLoginPage() {
 
     loginError.classList.remove("show");
 
+    currentUser = null;
+
     if (loginForm) {
 
         loginForm.reset();
+
+    }
+
+}
+
+
+function applyUserRole(account) {
+
+    /* Sidebar + topbar identity */
+
+    const initials = account.initials;
+
+    document.getElementById("sidebarAvatar").textContent = initials;
+    document.getElementById("sidebarUserName").textContent = account.name;
+    document.getElementById("sidebarUserRole").textContent = account.title;
+
+    document.getElementById("topbarAvatar").textContent = initials;
+    document.getElementById("topbarUserName").textContent = account.name;
+    document.getElementById("topbarUserRole").textContent = account.title;
+
+    pageNames.dashboard.subtitle =
+        "Welcome back, " + account.name + "!";
+
+
+    /* Admin-only navigation is hidden from advisers, since
+       an adviser should only encode/manage their own
+       advisory class, not run the whole school. */
+
+    const isAdviser = account.role === "adviser";
+
+    ADMIN_ONLY_PAGES.forEach(function(id) {
+
+        const navEl =
+            document.getElementById(id);
+
+        if (navEl) {
+
+            navEl.classList.toggle("hidden", isAdviser);
+
+        }
+
+    });
+
+
+    /* Students page: advisers only see and add
+       students belonging to their own section */
+
+    if (isAdviser) {
+
+        document.getElementById("studentsPageTitle").textContent =
+            "My Advisory - " + account.grade + " " + account.section;
+
+        document.getElementById("studentsPageSubtitle").textContent =
+            "Encode and manage students under your advisory class only.";
+
+    } else {
+
+        document.getElementById("studentsPageTitle").textContent =
+            "Student Management";
+
+        document.getElementById("studentsPageSubtitle").textContent =
+            "Manage student information and enrollment.";
+
+    }
+
+    filterStudentsForCurrentUser();
+    applyStudentModalLock();
+
+}
+
+
+function filterStudentsForCurrentUser() {
+
+    const rows =
+        document.querySelectorAll("#studentTable tbody tr");
+
+    rows.forEach(function(row) {
+
+        if (!currentUser || currentUser.role === "admin") {
+
+            row.classList.remove("hidden");
+            return;
+
+        }
+
+        const matches =
+            row.dataset.grade === currentUser.grade &&
+            row.dataset.section === currentUser.section;
+
+        row.classList.toggle("hidden", !matches);
+
+    });
+
+}
+
+
+function applyStudentModalLock() {
+
+    const gradeField =
+        document.getElementById("newStudentGrade");
+
+    const sectionField =
+        document.getElementById("newStudentSection");
+
+    if (!gradeField || !sectionField) {
+
+        return;
+
+    }
+
+    if (currentUser && currentUser.role === "adviser") {
+
+        gradeField.value = currentUser.grade;
+        gradeField.disabled = true;
+
+        sectionField.value = currentUser.section;
+        sectionField.readOnly = true;
+
+    } else {
+
+        gradeField.disabled = false;
+
+        sectionField.value = "";
+        sectionField.readOnly = false;
 
     }
 
@@ -93,14 +257,24 @@ if (loginForm) {
                 loginPasswordInput.value;
 
 
-            const isValid =
-                username === DEMO_USERNAME &&
-                password === DEMO_PASSWORD;
+            const account =
+                DEMO_ACCOUNTS.find(function(acc) {
+
+                    return (
+                        acc.username === username &&
+                        acc.password === password
+                    );
+
+                });
 
 
-            if (isValid) {
+            if (account) {
 
                 loginError.classList.remove("show");
+
+                currentUser = account;
+
+                applyUserRole(account);
 
                 showApp();
 
@@ -361,6 +535,8 @@ const cancelModal =
 
 function openStudentModal() {
 
+    applyStudentModalLock();
+
     modal.classList.add("show");
 
 }
@@ -453,6 +629,9 @@ studentForm.addEventListener(
         const row =
             document.createElement("tr");
 
+        row.dataset.grade = grade;
+        row.dataset.section = section;
+
 
         row.innerHTML = `
 
@@ -511,6 +690,8 @@ studentForm.addEventListener(
 
 
         studentForm.reset();
+
+        applyStudentModalLock();
 
         hideStudentModal();
 
