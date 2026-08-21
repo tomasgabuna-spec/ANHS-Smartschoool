@@ -324,6 +324,11 @@ const pageNames = {
         subtitle: "Manage classes, sections and subjects."
     },
 
+    syllabus: {
+        title: "Syllabus",
+        subtitle: "Senior High School program syllabus per track and cluster."
+    },
+
     lessonplans: {
         title: "Lesson Plans / DLL",
         subtitle: "Prepare and track daily lesson logs."
@@ -702,6 +707,60 @@ studentForm.addEventListener(
 
     }
 );
+
+
+/* ================================
+   SYLLABUS TABS
+================================ */
+
+const syllabusTabs =
+    document.querySelectorAll(".syllabus-tab");
+
+const syllabusPanels =
+    document.querySelectorAll(".syllabus-panel");
+
+
+syllabusTabs.forEach(tab => {
+
+    tab.addEventListener("click", function() {
+
+        syllabusTabs.forEach(t => {
+            t.classList.remove("active");
+        });
+
+        syllabusPanels.forEach(panel => {
+            panel.classList.remove("active");
+        });
+
+        this.classList.add("active");
+
+        const targetPanel =
+            document.getElementById(
+                `syllabus-${this.dataset.syllabus}`
+            );
+
+        if (targetPanel) {
+            targetPanel.classList.add("active");
+        }
+
+    });
+
+});
+
+
+const printSyllabusBtn =
+    document.getElementById("printSyllabusBtn");
+
+if (printSyllabusBtn) {
+
+    printSyllabusBtn.addEventListener(
+        "click",
+        function() {
+            window.print();
+        }
+    );
+
+}
 
 
 /* ================================
