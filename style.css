@@ -1251,6 +1251,11 @@ td {
     gap: 18px;
 }
 
+.module-grid-2 {
+    grid-template-columns:
+        repeat(2, 1fr);
+}
+
 .module-card,
 .report-card {
     background: white;
