@@ -1163,6 +1163,34 @@ td {
     color: #854d0e;
 }
 
+.status.academic {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.status.techpro {
+    background: #ffedd5;
+    color: #9a3412;
+}
+
+.outline-select {
+    border: 1px solid var(--border);
+
+    background: white;
+
+    color: #4b5563;
+
+    padding: 9px 14px;
+
+    border-radius: 8px;
+
+    font-size: 11px;
+
+    cursor: pointer;
+
+    outline: none;
+}
+
 .table-btn {
     border: none;
 

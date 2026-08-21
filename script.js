@@ -943,6 +943,299 @@ if (lessonPlanForm) {
 
 
 /* ================================
+   TEACHER SEARCH + DEPARTMENT FILTER
+================================ */
+
+const teacherSearch =
+    document.getElementById("teacherSearch");
+
+const teacherDepartmentFilter =
+    document.getElementById("teacherDepartmentFilter");
+
+
+function filterTeacherTable() {
+
+    const searchValue =
+        teacherSearch
+            ? teacherSearch.value.toLowerCase()
+            : "";
+
+    const departmentValue =
+        teacherDepartmentFilter
+            ? teacherDepartmentFilter.value
+            : "all";
+
+    const rows =
+        document.querySelectorAll(
+            "#teacherTable tbody tr"
+        );
+
+    rows.forEach(row => {
+
+        const text =
+            row.textContent.toLowerCase();
+
+        const matchesSearch =
+            text.includes(searchValue);
+
+        const matchesDepartment =
+            departmentValue === "all" ||
+            row.dataset.department === departmentValue;
+
+        row.style.display =
+            matchesSearch && matchesDepartment
+                ? ""
+                : "none";
+
+    });
+
+}
+
+
+if (teacherSearch) {
+
+    teacherSearch.addEventListener(
+        "input",
+        filterTeacherTable
+    );
+
+}
+
+
+if (teacherDepartmentFilter) {
+
+    teacherDepartmentFilter.addEventListener(
+        "change",
+        filterTeacherTable
+    );
+
+}
+
+
+/* ================================
+   TEACHER MODAL
+================================ */
+
+const teacherModal =
+    document.getElementById("teacherModal");
+
+const addTeacherBtn =
+    document.getElementById("addTeacherBtn");
+
+const closeTeacherModal =
+    document.getElementById("closeTeacherModal");
+
+const cancelTeacherModal =
+    document.getElementById("cancelTeacherModal");
+
+
+function openTeacherModal() {
+
+    teacherModal.classList.add("show");
+
+}
+
+
+function hideTeacherModal() {
+
+    teacherModal.classList.remove("show");
+
+}
+
+
+if (addTeacherBtn) {
+
+    addTeacherBtn.addEventListener(
+        "click",
+        openTeacherModal
+    );
+
+}
+
+
+if (closeTeacherModal) {
+
+    closeTeacherModal.addEventListener(
+        "click",
+        hideTeacherModal
+    );
+
+}
+
+
+if (cancelTeacherModal) {
+
+    cancelTeacherModal.addEventListener(
+        "click",
+        hideTeacherModal
+    );
+
+}
+
+
+if (teacherModal) {
+
+    teacherModal.addEventListener("click", function(event) {
+
+        if (event.target === teacherModal) {
+
+            hideTeacherModal();
+
+        }
+
+    });
+
+}
+
+
+/* ================================
+   ADD TEACHER
+================================ */
+
+const teacherForm =
+    document.getElementById("teacherForm");
+
+
+if (teacherForm) {
+
+    teacherForm.addEventListener(
+        "submit",
+        function(event) {
+
+            event.preventDefault();
+
+
+            const name =
+                document.getElementById(
+                    "newTeacherName"
+                ).value;
+
+            const sex =
+                document.getElementById(
+                    "newTeacherSex"
+                ).value;
+
+            const age =
+                document.getElementById(
+                    "newTeacherAge"
+                ).value;
+
+            const department =
+                document.getElementById(
+                    "newTeacherDepartment"
+                ).value;
+
+            const position =
+                document.getElementById(
+                    "newTeacherPosition"
+                ).value;
+
+            const years =
+                document.getElementById(
+                    "newTeacherYears"
+                ).value;
+
+            const postGrad =
+                document.getElementById(
+                    "newTeacherPostGrad"
+                ).value;
+
+
+            const departmentClass =
+                department === "TechPro"
+                    ? "techpro"
+                    : "academic";
+
+
+            const tbody =
+                document.querySelector(
+                    "#teacherTable tbody"
+                );
+
+
+            const row =
+                document.createElement("tr");
+
+            row.dataset.department = department;
+
+
+            row.innerHTML = `
+
+                <td>${name}</td>
+
+                <td>${sex}</td>
+
+                <td>${age}</td>
+
+                <td>
+                    <span class="status ${departmentClass}">
+                        ${department}
+                    </span>
+                </td>
+
+                <td>${position}</td>
+
+                <td>${years}</td>
+
+                <td>${postGrad}</td>
+
+                <td>
+
+                    <button class="table-btn">
+
+                        <i class="fa-solid fa-eye"></i>
+
+                    </button>
+
+                </td>
+
+            `;
+
+
+            tbody.appendChild(row);
+
+
+            /* Update teacher count on dashboard */
+
+            const teacherCountElement =
+                document.getElementById(
+                    "teacherCount"
+                );
+
+            if (teacherCountElement) {
+
+                let currentTeacherCount =
+                    parseInt(
+                        teacherCountElement.textContent.replace(
+                            ",",
+                            ""
+                        )
+                    );
+
+                currentTeacherCount++;
+
+                teacherCountElement.textContent =
+                    currentTeacherCount.toLocaleString();
+
+            }
+
+
+            teacherForm.reset();
+
+            hideTeacherModal();
+
+
+            alert(
+                "Teacher successfully added to ANHS SmartSchool."
+            );
+
+        }
+    );
+
+}
+
+
+/* ================================
    NOTIFICATION
 ================================ */
 

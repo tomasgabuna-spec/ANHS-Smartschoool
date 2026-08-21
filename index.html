@@ -321,7 +321,7 @@
 
                         <div>
                             <span>Teachers</span>
-                            <h3>86</h3>
+                            <h3 id="teacherCount">86</h3>
                             <small>
                                 <i class="fa-solid fa-arrow-up"></i>
                                 3 new this year
@@ -754,26 +754,117 @@
                         <p>Manage faculty information and assignments.</p>
                     </div>
 
-                    <button class="primary-btn">
+                    <button class="primary-btn" id="addTeacherBtn">
                         <i class="fa-solid fa-plus"></i>
                         Add Teacher
                     </button>
 
                 </div>
 
-                <div class="card empty-module">
 
-                    <i class="fa-solid fa-chalkboard-user"></i>
+                <div class="card">
 
-                    <h3>Teacher Management</h3>
+                    <div class="table-tools">
 
-                    <p>
-                        Add, edit, search, and manage ANHS teachers.
-                    </p>
+                        <div class="search-box">
+                            <i class="fa-solid fa-search"></i>
+                            <input
+                                type="text"
+                                id="teacherSearch"
+                                placeholder="Search teachers..."
+                            >
+                        </div>
 
-                    <button class="primary-btn">
-                        Add Teacher
-                    </button>
+                        <select id="teacherDepartmentFilter" class="outline-select">
+                            <option value="all">All Departments</option>
+                            <option value="Academic">Academic</option>
+                            <option value="TechPro">TechPro</option>
+                        </select>
+
+                    </div>
+
+
+                    <div class="table-container">
+
+                        <table id="teacherTable">
+
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Sex</th>
+                                    <th>Age</th>
+                                    <th>Department</th>
+                                    <th>Position</th>
+                                    <th>Years in Service</th>
+                                    <th>Post-Graduate Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                <tr data-department="Academic">
+                                    <td>Ana Marie Villanueva</td>
+                                    <td>Female</td>
+                                    <td>34</td>
+                                    <td>
+                                        <span class="status academic">
+                                            Academic
+                                        </span>
+                                    </td>
+                                    <td>Teacher III</td>
+                                    <td>9</td>
+                                    <td>MA Graduate</td>
+                                    <td>
+                                        <button class="table-btn">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <tr data-department="Academic">
+                                    <td>Ramon C. Dela Peña</td>
+                                    <td>Male</td>
+                                    <td>41</td>
+                                    <td>
+                                        <span class="status academic">
+                                            Academic
+                                        </span>
+                                    </td>
+                                    <td>Master Teacher I</td>
+                                    <td>16</td>
+                                    <td>With Doctorate Units</td>
+                                    <td>
+                                        <button class="table-btn">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <tr data-department="TechPro">
+                                    <td>Jerome A. Bautista</td>
+                                    <td>Male</td>
+                                    <td>29</td>
+                                    <td>
+                                        <span class="status techpro">
+                                            TechPro
+                                        </span>
+                                    </td>
+                                    <td>Teacher I</td>
+                                    <td>4</td>
+                                    <td>With MA Units</td>
+                                    <td>
+                                        <button class="table-btn">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
 
                 </div>
 
@@ -1455,6 +1546,138 @@
                     class="primary-btn"
                 >
                     Save Lesson Plan
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- ================= TEACHER MODAL ================= -->
+
+<div class="modal" id="teacherModal">
+
+    <div class="modal-content">
+
+        <div class="modal-header">
+
+            <div>
+                <h2>Add Teacher</h2>
+                <p>Enter faculty information.</p>
+            </div>
+
+            <button class="close-modal" id="closeTeacherModal">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+        <form id="teacherForm">
+
+            <div class="form-grid">
+
+                <label class="full-width">
+                    Full Name
+                    <input
+                        type="text"
+                        id="newTeacherName"
+                        placeholder="Juan Dela Cruz"
+                        required
+                    >
+                </label>
+
+                <label>
+                    Sex
+                    <select id="newTeacherSex">
+                        <option>Male</option>
+                        <option>Female</option>
+                    </select>
+                </label>
+
+                <label>
+                    Age
+                    <input
+                        type="number"
+                        id="newTeacherAge"
+                        placeholder="e.g. 32"
+                        min="18"
+                        max="75"
+                        required
+                    >
+                </label>
+
+                <label class="full-width">
+                    Address
+                    <input
+                        type="text"
+                        id="newTeacherAddress"
+                        placeholder="Complete address"
+                        required
+                    >
+                </label>
+
+                <label>
+                    Department
+                    <select id="newTeacherDepartment">
+                        <option value="Academic">Academic</option>
+                        <option value="TechPro">TechPro</option>
+                    </select>
+                </label>
+
+                <label>
+                    Position
+                    <input
+                        type="text"
+                        id="newTeacherPosition"
+                        placeholder="e.g. Teacher I"
+                        required
+                    >
+                </label>
+
+                <label>
+                    Years in Service
+                    <input
+                        type="number"
+                        id="newTeacherYears"
+                        placeholder="e.g. 5"
+                        min="0"
+                        max="50"
+                        required
+                    >
+                </label>
+
+                <label>
+                    Post-Graduate Status
+                    <select id="newTeacherPostGrad">
+                        <option>None</option>
+                        <option>With MA Units</option>
+                        <option>MA Graduate</option>
+                        <option>With Doctorate Units</option>
+                        <option>Doctorate Graduate</option>
+                    </select>
+                </label>
+
+            </div>
+
+            <div class="modal-actions">
+
+                <button
+                    type="button"
+                    class="outline-btn"
+                    id="cancelTeacherModal"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    type="submit"
+                    class="primary-btn"
+                >
+                    Save Teacher
                 </button>
 
             </div>
