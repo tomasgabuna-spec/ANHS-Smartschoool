@@ -825,6 +825,35 @@ if (lessonPlanModal) {
 
 
 /* ================================
+   TEACHER -> DEPARTMENT AUTO-FILL
+================================ */
+
+const newLessonTeacher =
+    document.getElementById("newLessonTeacher");
+
+const newLessonDepartment =
+    document.getElementById("newLessonDepartment");
+
+if (newLessonTeacher && newLessonDepartment) {
+
+    newLessonTeacher.addEventListener("change", function() {
+
+        const selectedOption =
+            this.options[this.selectedIndex];
+
+        const department =
+            selectedOption
+                ? selectedOption.dataset.department || ""
+                : "";
+
+        newLessonDepartment.value = department;
+
+    });
+
+}
+
+
+/* ================================
    LESSON PLAN WEEK OPTIONS (1-20)
 ================================ */
 
@@ -1184,6 +1213,16 @@ if (lessonPlanForm) {
                     "newLessonWeek"
                 ).value;
 
+            const teacher =
+                document.getElementById(
+                    "newLessonTeacher"
+                ).value;
+
+            const department =
+                document.getElementById(
+                    "newLessonDepartment"
+                ).value;
+
             const subject =
                 document.getElementById(
                     "newLessonSubject"
@@ -1269,9 +1308,23 @@ if (lessonPlanForm) {
                 document.createElement("tr");
 
 
+            const departmentClass =
+                department === "TechPro"
+                    ? "techpro"
+                    : "academic";
+
+
             row.innerHTML = `
 
                 <td>${formattedDate}</td>
+
+                <td>${teacher}</td>
+
+                <td>
+                    <span class="status ${departmentClass}">
+                        ${department}
+                    </span>
+                </td>
 
                 <td>${subject}</td>
 

@@ -962,6 +962,8 @@
                             <thead>
                                 <tr>
                                     <th>Date</th>
+                                    <th>Teacher</th>
+                                    <th>Department</th>
                                     <th>Subject / Learning Area</th>
                                     <th>Grade & Section</th>
                                     <th>Term</th>
@@ -976,9 +978,15 @@
 
                                 <tr>
                                     <td>Aug 24, 2026</td>
+                                    <td>Ana Marie Villanueva</td>
+                                    <td>
+                                        <span class="status academic">
+                                            Academic
+                                        </span>
+                                    </td>
                                     <td>General Mathematics</td>
                                     <td>Grade 11 - STEM A</td>
-                                    <td>1st Term</td>
+                                    <td>Term 1</td>
                                     <td>Week 3</td>
                                     <td>
                                         <span class="file-chip">
@@ -1000,9 +1008,15 @@
 
                                 <tr>
                                     <td>Aug 24, 2026</td>
+                                    <td>Ramon C. Dela Peña</td>
+                                    <td>
+                                        <span class="status academic">
+                                            Academic
+                                        </span>
+                                    </td>
                                     <td>English</td>
                                     <td>Grade 11 - ABM A</td>
-                                    <td>1st Term</td>
+                                    <td>Term 1</td>
                                     <td>Week 3</td>
                                     <td>
                                         <span class="file-chip">
@@ -1024,9 +1038,15 @@
 
                                 <tr>
                                     <td>Aug 25, 2026</td>
+                                    <td>Jerome A. Bautista</td>
+                                    <td>
+                                        <span class="status techpro">
+                                            TechPro
+                                        </span>
+                                    </td>
                                     <td>Science</td>
                                     <td>Grade 10 - Rizal</td>
-                                    <td>1st Term</td>
+                                    <td>Term 1</td>
                                     <td>Week 4</td>
                                     <td>
                                         <span class="file-chip">
@@ -1494,15 +1514,34 @@
                     Term
                     <select id="newLessonTerm" required>
                         <option value="" disabled selected>Select term</option>
-                        <option>1st Term</option>
-                        <option>2nd Term</option>
-                        <option>3rd Term</option>
+                        <option>Term 1</option>
+                        <option>Term 2</option>
+                        <option>Term 3</option>
                     </select>
                 </label>
 
                 <label>
                     Week
                     <select id="newLessonWeek" required></select>
+                </label>
+
+                <label>
+                    Teacher Name
+                    <select id="newLessonTeacher" required>
+                        <option value="" disabled selected>Select teacher</option>
+                        <option data-department="Academic">Ana Marie Villanueva</option>
+                        <option data-department="Academic">Ramon C. Dela Peña</option>
+                        <option data-department="TechPro">Jerome A. Bautista</option>
+                    </select>
+                </label>
+
+                <label>
+                    Department
+                    <select id="newLessonDepartment" disabled>
+                        <option value="" selected>—</option>
+                        <option value="Academic">Academic</option>
+                        <option value="TechPro">TechPro</option>
+                    </select>
                 </label>
 
                 <label>
