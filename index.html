@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>ANHS SmartSchool</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Icons -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
+</head>
+
+<body>
+
+<!-- ================= LOGIN PAGE ================= -->
+<div class="login-page" id="loginPage">
+
+    <div class="login-card">
+
+        <div class="login-brand">
+
+            <div class="brand-logo">
+                <i class="fa-solid fa-school"></i>
+            </div>
+
+            <h2>ANHS SmartSchool</h2>
+            <p>Alcantara National High School</p>
+
+        </div>
+
+        <form id="loginForm">
+
+            <label>
+                Username / ID
+                <input
+                    type="text"
+                    id="loginUsername"
+                    placeholder="Enter your username"
+                    autocomplete="username"
+                    required
+                >
+            </label>
+
+            <label>
+                Password
+                <div class="password-field">
+
+                    <input
+                        type="password"
+                        id="loginPassword"
+                        placeholder="Enter your password"
+                        autocomplete="current-password"
+                        required
+                    >
+
+                    <button
+                        type="button"
+                        class="toggle-password"
+                        id="togglePassword"
+                    >
+                        <i class="fa-regular fa-eye"></i>
+                    </button>
+
+                </div>
+            </label>
+
+            <div class="login-options">
+
+                <label class="checkbox-label">
+                    <input type="checkbox" id="rememberMe">
+                    Remember me
+                </label>
+
+                <a href="#" class="forgot-link">
+                    Forgot password?
+                </a>
+
+            </div>
+
+            <p class="login-error" id="loginError">
+                Invalid username or password.
+            </p>
+
+            <button type="submit" class="primary-btn login-btn">
+                <i class="fa-solid fa-right-to-bracket"></i>
+                Login
+            </button>
+
+            <p class="login-hint">
+                Demo credentials: <strong>admin</strong> / <strong>admin123</strong>
+            </p>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<div class="app hidden" id="app">
+
+    <!-- ================= SIDEBAR ================= -->
+    <aside class="sidebar" id="sidebar">
+
+        <div class="brand">
+            <div class="brand-logo">
+                <i class="fa-solid fa-school"></i>
+            </div>
+
+            <div class="brand-text">
+                <h2>ANHS</h2>
+                <span>SmartSchool</span>
+            </div>
+        </div>
+
+        <div class="school-name">
+            Alcantara National High School
+        </div>
+
+        <nav class="navigation">
+
+            <p class="menu-title">MAIN</p>
+
+            <a href="#" class="nav-item active" data-page="dashboard">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Dashboard</span>
+            </a>
+
+            <a href="#" class="nav-item" data-page="students">
+                <i class="fa-solid fa-user-graduate"></i>
+                <span>Students</span>
+            </a>
+
+            <a href="#" class="nav-item" data-page="teachers">
+                <i class="fa-solid fa-chalkboard-user"></i>
+                <span>Teachers</span>
+            </a>
+
+            <a href="#" class="nav-item" data-page="classes">
+                <i class="fa-solid fa-book-open"></i>
+                <span>Classes & Subjects</span>
+            </a>
+
+            <a href="#" class="nav-item" data-page="lessonplans">
+                <i class="fa-solid fa-chalkboard"></i>
+                <span>Lesson Plans / DLL</span>
+            </a>
+
+            <a href="#" class="nav-item" data-page="grades">
+                <i class="fa-solid fa-file-lines"></i>
+                <span>Grades</span>
+            </a>
+
+            <a href="#" class="nav-item" data-page="schedule">
+                <i class="fa-solid fa-calendar-days"></i>
+                <span>Schedule</span>
+            </a>
+
+            <a href="#" class="nav-item" data-page="attendance">
+                <i class="fa-solid fa-clipboard-check"></i>
+                <span>Attendance</span>
+            </a>
+
+            <p class="menu-title">MANAGEMENT</p>
+
+            <a href="#" class="nav-item" data-page="announcements">
+                <i class="fa-solid fa-bullhorn"></i>
+                <span>Announcements</span>
+            </a>
+
+            <a href="#" class="nav-item" data-page="records">
+                <i class="fa-solid fa-folder-open"></i>
+                <span>Student Records</span>
+            </a>
+
+            <a href="#" class="nav-item" data-page="parents">
+                <i class="fa-solid fa-people-group"></i>
+                <span>Parents / Guardians</span>
+            </a>
+
+            <a href="#" class="nav-item" data-page="reports">
+                <i class="fa-solid fa-chart-column"></i>
+                <span>Reports</span>
+            </a>
+
+            <p class="menu-title">SYSTEM</p>
+
+            <a href="#" class="nav-item" data-page="settings">
+                <i class="fa-solid fa-gear"></i>
+                <span>Settings</span>
+            </a>
+
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-avatar">AD</div>
+
+            <div class="user-info">
+                <strong>Administrator</strong>
+                <span>School Admin</span>
+            </div>
+
+            <button class="logout-btn" title="Logout">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        </div>
+
+    </aside>
+
+
+    <!-- ================= MAIN AREA ================= -->
+    <main class="main">
+
+        <!-- TOPBAR -->
+        <header class="topbar">
+
+            <div class="topbar-left">
+
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+
+                <div>
+                    <h1 id="pageTitle">Dashboard</h1>
+                    <p id="pageSubtitle">
+                        Welcome back, Administrator!
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div class="topbar-right">
+
+                <button class="icon-button notification-btn">
+                    <i class="fa-regular fa-bell"></i>
+                    <span class="notification-dot"></span>
+                </button>
+
+                <div class="profile">
+
+                    <div class="profile-avatar">
+                        AD
+                    </div>
+
+                    <div class="profile-details">
+                        <strong>Administrator</strong>
+                        <span>School Admin</span>
+                    </div>
+
+                    <i class="fa-solid fa-chevron-down"></i>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- ================= CONTENT ================= -->
+        <section class="content">
+
+            <!-- DASHBOARD -->
+            <div class="page active-page" id="dashboard">
+
+                <div class="welcome-card">
+
+                    <div>
+                        <span class="welcome-label">
+                            ANHS SMARTSCHOOL
+                        </span>
+
+                        <h2>
+                            One School. One System.
+                        </h2>
+
+                        <p>
+                            Smarter management for Alcantara National High School.
+                        </p>
+                    </div>
+
+                    <div class="welcome-icon">
+                        <i class="fa-solid fa-school"></i>
+                    </div>
+
+                </div>
+
+
+                <!-- STATISTICS -->
+                <div class="stats-grid">
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon students-icon">
+                            <i class="fa-solid fa-user-graduate"></i>
+                        </div>
+
+                        <div>
+                            <span>Total Students</span>
+                            <h3 id="studentCount">1,248</h3>
+                            <small>
+                                <i class="fa-solid fa-arrow-up"></i>
+                                5.2% from last year
+                            </small>
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon teacher-icon">
+                            <i class="fa-solid fa-chalkboard-user"></i>
+                        </div>
+
+                        <div>
+                            <span>Teachers</span>
+                            <h3>86</h3>
+                            <small>
+                                <i class="fa-solid fa-arrow-up"></i>
+                                3 new this year
+                            </small>
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon class-icon">
+                            <i class="fa-solid fa-book-open"></i>
+                        </div>
+
+                        <div>
+                            <span>Classes</span>
+                            <h3>42</h3>
+                            <small>
+                                Active sections
+                            </small>
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon attendance-icon">
+                            <i class="fa-solid fa-user-check"></i>
+                        </div>
+
+                        <div>
+                            <span>Today's Attendance</span>
+                            <h3>94.6%</h3>
+                            <small>
+                                1,181 present
+                            </small>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- DASHBOARD GRID -->
+                <div class="dashboard-grid">
+
+                    <!-- QUICK ACTIONS -->
+                    <div class="card">
+
+                        <div class="card-header">
+
+                            <div>
+                                <h3>Quick Actions</h3>
+                                <p>Frequently used functions</p>
+                            </div>
+
+                        </div>
+
+                        <div class="quick-actions">
+
+                            <button class="quick-action"
+                                    data-page="students">
+
+                                <i class="fa-solid fa-user-plus"></i>
+
+                                <span>
+                                    Add Student
+                                </span>
+
+                            </button>
+
+                            <button class="quick-action"
+                                    data-page="teachers">
+
+                                <i class="fa-solid fa-user-tie"></i>
+
+                                <span>
+                                    Add Teacher
+                                </span>
+
+                            </button>
+
+                            <button class="quick-action"
+                                    data-page="attendance">
+
+                                <i class="fa-solid fa-clipboard-check"></i>
+
+                                <span>
+                                    Attendance
+                                </span>
+
+                            </button>
+
+                            <button class="quick-action"
+                                    data-page="grades">
+
+                                <i class="fa-solid fa-pen-to-square"></i>
+
+                                <span>
+                                    Enter Grades
+                                </span>
+
+                            </button>
+
+                            <button class="quick-action"
+                                    data-page="lessonplans">
+
+                                <i class="fa-solid fa-chalkboard"></i>
+
+                                <span>
+                                    Lesson Plan
+                                </span>
+
+                            </button>
+
+                            <button class="quick-action"
+                                    data-page="schedule">
+
+                                <i class="fa-solid fa-calendar-plus"></i>
+
+                                <span>
+                                    Schedule
+                                </span>
+
+                            </button>
+
+                            <button class="quick-action"
+                                    data-page="reports">
+
+                                <i class="fa-solid fa-chart-simple"></i>
+
+                                <span>
+                                    Generate Report
+                                </span>
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- ANNOUNCEMENTS -->
+                    <div class="card">
+
+                        <div class="card-header">
+
+                            <div>
+                                <h3>Recent Announcements</h3>
+                                <p>Latest school updates</p>
+                            </div>
+
+                            <button class="view-all"
+                                    data-page="announcements">
+                                View All
+                            </button>
+
+                        </div>
+
+
+                        <div class="announcement-list">
+
+                            <div class="announcement">
+
+                                <div class="announcement-icon">
+                                    <i class="fa-solid fa-bullhorn"></i>
+                                </div>
+
+                                <div>
+                                    <h4>School Orientation</h4>
+                                    <p>
+                                        General orientation for students and parents.
+                                    </p>
+
+                                    <span>
+                                        August 20, 2026
+                                    </span>
+                                </div>
+
+                            </div>
+
+
+                            <div class="announcement">
+
+                                <div class="announcement-icon">
+                                    <i class="fa-solid fa-calendar"></i>
+                                </div>
+
+                                <div>
+                                    <h4>Enrollment Schedule</h4>
+                                    <p>
+                                        Please check the updated enrollment schedule.
+                                    </p>
+
+                                    <span>
+                                        August 18, 2026
+                                    </span>
+                                </div>
+
+                            </div>
+
+
+                            <div class="announcement">
+
+                                <div class="announcement-icon">
+                                    <i class="fa-solid fa-people-group"></i>
+                                </div>
+
+                                <div>
+                                    <h4>Parent Meeting</h4>
+                                    <p>
+                                        Parents and guardians are invited.
+                                    </p>
+
+                                    <span>
+                                        August 15, 2026
+                                    </span>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ATTENDANCE OVERVIEW -->
+                <div class="card attendance-overview">
+
+                    <div class="card-header">
+
+                        <div>
+                            <h3>Today's Attendance</h3>
+                            <p>School-wide attendance summary</p>
+                        </div>
+
+                        <button class="outline-btn"
+                                data-page="attendance">
+                            View Details
+                        </button>
+
+                    </div>
+
+
+                    <div class="attendance-bars">
+
+                        <div class="attendance-row">
+
+                            <div class="attendance-label">
+                                <span>Present</span>
+                                <strong>94.6%</strong>
+                            </div>
+
+                            <div class="progress">
+                                <div class="progress-fill"
+                                     style="width:94.6%">
+                                </div>
+                            </div>
+
+                        </div>
+
+
+                        <div class="attendance-row">
+
+                            <div class="attendance-label">
+                                <span>Absent</span>
+                                <strong>3.2%</strong>
+                            </div>
+
+                            <div class="progress">
+                                <div class="progress-fill absent"
+                                     style="width:3.2%">
+                                </div>
+                            </div>
+
+                        </div>
+
+
+                        <div class="attendance-row">
+
+                            <div class="attendance-label">
+                                <span>Late</span>
+                                <strong>2.2%</strong>
+                            </div>
+
+                            <div class="progress">
+                                <div class="progress-fill late"
+                                     style="width:2.2%">
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- STUDENTS -->
+            <div class="page" id="students">
+
+                <div class="page-header">
+
+                    <div>
+                        <h2>Student Management</h2>
+                        <p>Manage student information and enrollment.</p>
+                    </div>
+
+                    <button class="primary-btn" id="addStudentBtn">
+                        <i class="fa-solid fa-plus"></i>
+                        Add Student
+                    </button>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="table-tools">
+
+                        <div class="search-box">
+                            <i class="fa-solid fa-search"></i>
+                            <input
+                                type="text"
+                                id="studentSearch"
+                                placeholder="Search students..."
+                            >
+                        </div>
+
+                        <button class="outline-btn">
+                            <i class="fa-solid fa-filter"></i>
+                            Filter
+                        </button>
+
+                    </div>
+
+
+                    <div class="table-container">
+
+                        <table id="studentTable">
+
+                            <thead>
+                                <tr>
+                                    <th>Student ID</th>
+                                    <th>Name</th>
+                                    <th>Grade</th>
+                                    <th>Section</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                <tr>
+                                    <td>ANHS-2026-001</td>
+                                    <td>Juan Dela Cruz</td>
+                                    <td>Grade 11</td>
+                                    <td>STEM A</td>
+                                    <td>
+                                        <span class="status active">
+                                            Active
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="table-btn">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>ANHS-2026-002</td>
+                                    <td>Maria Santos</td>
+                                    <td>Grade 11</td>
+                                    <td>ABM A</td>
+                                    <td>
+                                        <span class="status active">
+                                            Active
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="table-btn">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>ANHS-2026-003</td>
+                                    <td>Pedro Reyes</td>
+                                    <td>Grade 10</td>
+                                    <td>Rizal</td>
+                                    <td>
+                                        <span class="status active">
+                                            Active
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="table-btn">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- TEACHERS -->
+            <div class="page" id="teachers">
+
+                <div class="page-header">
+
+                    <div>
+                        <h2>Teacher Management</h2>
+                        <p>Manage faculty information and assignments.</p>
+                    </div>
+
+                    <button class="primary-btn">
+                        <i class="fa-solid fa-plus"></i>
+                        Add Teacher
+                    </button>
+
+                </div>
+
+                <div class="card empty-module">
+
+                    <i class="fa-solid fa-chalkboard-user"></i>
+
+                    <h3>Teacher Management</h3>
+
+                    <p>
+                        Add, edit, search, and manage ANHS teachers.
+                    </p>
+
+                    <button class="primary-btn">
+                        Add Teacher
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- CLASSES -->
+            <div class="page" id="classes">
+
+                <div class="page-header">
+
+                    <div>
+                        <h2>Classes & Subjects</h2>
+                        <p>Manage sections, subjects and class assignments.</p>
+                    </div>
+
+                    <button class="primary-btn">
+                        <i class="fa-solid fa-plus"></i>
+                        Add Class
+                    </button>
+
+                </div>
+
+                <div class="module-grid">
+
+                    <div class="module-card">
+                        <i class="fa-solid fa-users"></i>
+                        <h3>Sections</h3>
+                        <strong>42</strong>
+                        <p>Active sections</p>
+                    </div>
+
+                    <div class="module-card">
+                        <i class="fa-solid fa-book"></i>
+                        <h3>Subjects</h3>
+                        <strong>68</strong>
+                        <p>Registered subjects</p>
+                    </div>
+
+                    <div class="module-card">
+                        <i class="fa-solid fa-user-tie"></i>
+                        <h3>Assignments</h3>
+                        <strong>124</strong>
+                        <p>Teacher assignments</p>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- LESSON PLANS / DAILY LESSON LOG -->
+            <div class="page" id="lessonplans">
+
+                <div class="page-header">
+
+                    <div>
+                        <h2>Lesson Plans / Daily Lesson Log</h2>
+                        <p>Prepare and track teachers' daily lesson logs (DLL) and lesson plans.</p>
+                    </div>
+
+                    <button class="primary-btn" id="addLessonPlanBtn">
+                        <i class="fa-solid fa-plus"></i>
+                        Add Lesson Plan
+                    </button>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="table-tools">
+
+                        <div class="search-box">
+                            <i class="fa-solid fa-search"></i>
+                            <input
+                                type="text"
+                                id="lessonPlanSearch"
+                                placeholder="Search lesson plans..."
+                            >
+                        </div>
+
+                        <button class="outline-btn">
+                            <i class="fa-solid fa-filter"></i>
+                            Filter
+                        </button>
+
+                    </div>
+
+
+                    <div class="table-container">
+
+                        <table id="lessonPlanTable">
+
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Subject / Learning Area</th>
+                                    <th>Grade & Section</th>
+                                    <th>Quarter</th>
+                                    <th>Topic / Learning Competency</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                <tr>
+                                    <td>Aug 24, 2026</td>
+                                    <td>General Mathematics</td>
+                                    <td>Grade 11 - STEM A</td>
+                                    <td>1st Quarter</td>
+                                    <td>Functions and Their Graphs</td>
+                                    <td>
+                                        <span class="status active">
+                                            Submitted
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="table-btn">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>Aug 24, 2026</td>
+                                    <td>English</td>
+                                    <td>Grade 11 - ABM A</td>
+                                    <td>1st Quarter</td>
+                                    <td>Elements of a Short Story</td>
+                                    <td>
+                                        <span class="status pending">
+                                            Draft
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="table-btn">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>Aug 25, 2026</td>
+                                    <td>Science</td>
+                                    <td>Grade 10 - Rizal</td>
+                                    <td>1st Quarter</td>
+                                    <td>Newton's Laws of Motion</td>
+                                    <td>
+                                        <span class="status active">
+                                            Submitted
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="table-btn">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- GRADES -->
+            <div class="page" id="grades">
+
+                <div class="page-header">
+
+                    <div>
+                        <h2>Grades & Assessment</h2>
+                        <p>Manage student grades and academic performance.</p>
+                    </div>
+
+                    <button class="primary-btn">
+                        <i class="fa-solid fa-plus"></i>
+                        Enter Grades
+                    </button>
+
+                </div>
+
+                <div class="card empty-module">
+
+                    <i class="fa-solid fa-file-lines"></i>
+
+                    <h3>Grades Management</h3>
+
+                    <p>
+                        View and manage quarterly grades and assessments.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- SCHEDULE -->
+            <div class="page" id="schedule">
+
+                <div class="page-header">
+
+                    <div>
+                        <h2>School Schedule</h2>
+                        <p>Manage class schedules and room assignments.</p>
+                    </div>
+
+                    <button class="primary-btn">
+                        <i class="fa-solid fa-plus"></i>
+                        Add Schedule
+                    </button>
+
+                </div>
+
+                <div class="schedule-grid">
+
+                    <div class="schedule-item">
+                        <strong>7:30 AM</strong>
+                        <span>General Mathematics</span>
+                        <small>Grade 11 - STEM A</small>
+                    </div>
+
+                    <div class="schedule-item">
+                        <strong>9:00 AM</strong>
+                        <span>English</span>
+                        <small>Grade 11 - ABM A</small>
+                    </div>
+
+                    <div class="schedule-item">
+                        <strong>10:30 AM</strong>
+                        <span>Science</span>
+                        <small>Grade 10 - Rizal</small>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ATTENDANCE -->
+            <div class="page" id="attendance">
+
+                <div class="page-header">
+
+                    <div>
+                        <h2>Attendance</h2>
+                        <p>Monitor daily student attendance.</p>
+                    </div>
+
+                    <button class="primary-btn">
+                        <i class="fa-solid fa-check"></i>
+                        Record Attendance
+                    </button>
+
+                </div>
+
+                <div class="attendance-summary">
+
+                    <div class="attendance-stat">
+                        <span>Present</span>
+                        <strong>1,181</strong>
+                    </div>
+
+                    <div class="attendance-stat">
+                        <span>Absent</span>
+                        <strong>40</strong>
+                    </div>
+
+                    <div class="attendance-stat">
+                        <span>Late</span>
+                        <strong>27</strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ANNOUNCEMENTS -->
+            <div class="page" id="announcements">
+
+                <div class="page-header">
+
+                    <div>
+                        <h2>Announcements</h2>
+                        <p>School-wide announcements and notices.</p>
+                    </div>
+
+                    <button class="primary-btn">
+                        <i class="fa-solid fa-plus"></i>
+                        New Announcement
+                    </button>
+
+                </div>
+
+                <div class="announcement-page">
+
+                    <div class="announcement-large">
+                        <i class="fa-solid fa-bullhorn"></i>
+                        <div>
+                            <h3>School Orientation</h3>
+                            <p>
+                                General orientation for students and parents.
+                            </p>
+                            <small>August 20, 2026</small>
+                        </div>
+                    </div>
+
+                    <div class="announcement-large">
+                        <i class="fa-solid fa-calendar"></i>
+                        <div>
+                            <h3>Enrollment Schedule</h3>
+                            <p>
+                                Please check the updated enrollment schedule.
+                            </p>
+                            <small>August 18, 2026</small>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- RECORDS -->
+            <div class="page" id="records">
+
+                <div class="page-header">
+
+                    <div>
+                        <h2>Student Records</h2>
+                        <p>Access and manage student records.</p>
+                    </div>
+
+                </div>
+
+                <div class="card empty-module">
+
+                    <i class="fa-solid fa-folder-open"></i>
+
+                    <h3>Student Records</h3>
+
+                    <p>
+                        Centralized digital records for ANHS students.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- PARENTS -->
+            <div class="page" id="parents">
+
+                <div class="page-header">
+
+                    <div>
+                        <h2>Parents & Guardians</h2>
+                        <p>Manage parent and guardian information.</p>
+                    </div>
+
+                    <button class="primary-btn">
+                        <i class="fa-solid fa-plus"></i>
+                        Add Parent
+                    </button>
+
+                </div>
+
+                <div class="card empty-module">
+
+                    <i class="fa-solid fa-people-group"></i>
+
+                    <h3>Parent / Guardian Management</h3>
+
+                    <p>
+                        Manage parent and guardian contact information.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- REPORTS -->
+            <div class="page" id="reports">
+
+                <div class="page-header">
+
+                    <div>
+                        <h2>Reports</h2>
+                        <p>Generate school management reports.</p>
+                    </div>
+
+                </div>
+
+                <div class="module-grid">
+
+                    <div class="report-card">
+                        <i class="fa-solid fa-user-graduate"></i>
+                        <h3>Student Report</h3>
+                        <button class="outline-btn">Generate</button>
+                    </div>
+
+                    <div class="report-card">
+                        <i class="fa-solid fa-clipboard-check"></i>
+                        <h3>Attendance Report</h3>
+                        <button class="outline-btn">Generate</button>
+                    </div>
+
+                    <div class="report-card">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <h3>Academic Report</h3>
+                        <button class="outline-btn">Generate</button>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- SETTINGS -->
+            <div class="page" id="settings">
+
+                <div class="page-header">
+
+                    <div>
+                        <h2>System Settings</h2>
+                        <p>Configure ANHS SmartSchool.</p>
+                    </div>
+
+                </div>
+
+                <div class="card settings-card">
+
+                    <label>
+                        School Name
+                        <input
+                            type="text"
+                            value="Alcantara National High School"
+                        >
+                    </label>
+
+                    <label>
+                        System Name
+                        <input
+                            type="text"
+                            value="ANHS SmartSchool"
+                        >
+                    </label>
+
+                    <label>
+                        School Year
+                        <input
+                            type="text"
+                            value="2026-2027"
+                        >
+                    </label>
+
+                    <button class="primary-btn">
+                        Save Settings
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<!-- ================= STUDENT MODAL ================= -->
+
+<div class="modal" id="studentModal">
+
+    <div class="modal-content">
+
+        <div class="modal-header">
+
+            <div>
+                <h2>Add Student</h2>
+                <p>Enter student information.</p>
+            </div>
+
+            <button class="close-modal" id="closeModal">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+        <form id="studentForm">
+
+            <div class="form-grid">
+
+                <label>
+                    Student ID
+                    <input
+                        type="text"
+                        id="newStudentId"
+                        placeholder="ANHS-2026-004"
+                        required
+                    >
+                </label>
+
+                <label>
+                    Full Name
+                    <input
+                        type="text"
+                        id="newStudentName"
+                        placeholder="Juan Dela Cruz"
+                        required
+                    >
+                </label>
+
+                <label>
+                    Grade Level
+                    <select id="newStudentGrade">
+                        <option>Grade 7</option>
+                        <option>Grade 8</option>
+                        <option>Grade 9</option>
+                        <option>Grade 10</option>
+                        <option>Grade 11</option>
+                        <option>Grade 12</option>
+                    </select>
+                </label>
+
+                <label>
+                    Section
+                    <input
+                        type="text"
+                        id="newStudentSection"
+                        placeholder="Section"
+                        required
+                    >
+                </label>
+
+            </div>
+
+            <div class="modal-actions">
+
+                <button
+                    type="button"
+                    class="outline-btn"
+                    id="cancelModal"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    type="submit"
+                    class="primary-btn"
+                >
+                    Save Student
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- ================= LESSON PLAN MODAL ================= -->
+
+<div class="modal" id="lessonPlanModal">
+
+    <div class="modal-content">
+
+        <div class="modal-header">
+
+            <div>
+                <h2>Add Lesson Plan</h2>
+                <p>Enter daily lesson log (DLL) details.</p>
+            </div>
+
+            <button class="close-modal" id="closeLessonPlanModal">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+        <form id="lessonPlanForm">
+
+            <div class="form-grid">
+
+                <label>
+                    Date
+                    <input
+                        type="date"
+                        id="newLessonDate"
+                        required
+                    >
+                </label>
+
+                <label>
+                    Quarter
+                    <select id="newLessonQuarter">
+                        <option>1st Quarter</option>
+                        <option>2nd Quarter</option>
+                        <option>3rd Quarter</option>
+                        <option>4th Quarter</option>
+                    </select>
+                </label>
+
+                <label>
+                    Subject / Learning Area
+                    <input
+                        type="text"
+                        id="newLessonSubject"
+                        placeholder="e.g. General Mathematics"
+                        required
+                    >
+                </label>
+
+                <label>
+                    Grade & Section
+                    <input
+                        type="text"
+                        id="newLessonSection"
+                        placeholder="e.g. Grade 11 - STEM A"
+                        required
+                    >
+                </label>
+
+                <label class="full-width">
+                    Topic / Learning Competency
+                    <input
+                        type="text"
+                        id="newLessonTopic"
+                        placeholder="e.g. Functions and Their Graphs"
+                        required
+                    >
+                </label>
+
+                <label class="full-width">
+                    Learning Objectives
+                    <textarea
+                        id="newLessonObjectives"
+                        rows="3"
+                        placeholder="At the end of the lesson, students should be able to..."
+                    ></textarea>
+                </label>
+
+                <label>
+                    Status
+                    <select id="newLessonStatus">
+                        <option>Draft</option>
+                        <option>Submitted</option>
+                        <option>Approved</option>
+                    </select>
+                </label>
+
+            </div>
+
+            <div class="modal-actions">
+
+                <button
+                    type="button"
+                    class="outline-btn"
+                    id="cancelLessonPlanModal"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    type="submit"
+                    class="primary-btn"
+                >
+                    Save Lesson Plan
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<script src="script.js"></script>
+
+</body>
+</html>
