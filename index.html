@@ -35,10 +35,66 @@
 
         <form id="loginForm">
 
+            <label>
+                Username / ID
+                <input
+                    type="text"
+                    id="loginUsername"
+                    placeholder="Enter your username"
+                    autocomplete="username"
+                    required
+                >
+            </label>
+
+            <label>
+                Password
+                <div class="password-field">
+
+                    <input
+                        type="password"
+                        id="loginPassword"
+                        placeholder="Enter your password"
+                        autocomplete="current-password"
+                        required
+                    >
+
+                    <button
+                        type="button"
+                        class="toggle-password"
+                        id="togglePassword"
+                    >
+                        <i class="fa-regular fa-eye"></i>
+                    </button>
+
+                </div>
+            </label>
+
+            <div class="login-options">
+
+                <label class="checkbox-label">
+                    <input type="checkbox" id="rememberMe">
+                    Remember me
+                </label>
+
+                <a href="#" class="forgot-link">
+                    Forgot password?
+                </a>
+
+            </div>
+
+            <p class="login-error" id="loginError">
+                Invalid username or password.
+            </p>
+
             <button type="submit" class="primary-btn login-btn">
                 <i class="fa-solid fa-right-to-bracket"></i>
                 Login
             </button>
+
+            <p class="login-hint">
+                Admin: <strong>admin</strong> / <strong>admin123</strong><br>
+                Adviser: <strong>adviser1</strong> / <strong>adviser123</strong>
+            </p>
 
         </form>
 
@@ -79,6 +135,11 @@
             <a href="#" class="nav-item" data-page="teachers" id="navTeachers">
                 <i class="fa-solid fa-chalkboard-user"></i>
                 <span>Teachers</span>
+            </a>
+
+            <a href="#" class="nav-item" data-page="submissiontracker" id="navSubmissionTracker">
+                <i class="fa-solid fa-list-check"></i>
+                <span>Submission Tracker</span>
             </a>
 
             <a href="#" class="nav-item" data-page="lessonplans">
@@ -227,6 +288,44 @@
 
                 </div>
 
+
+                <!-- WEEKLY COMPLIANCE -->
+                <div class="compliance-section">
+                    <div class="card compliance-card">
+                        <div class="card-header compliance-header">
+                            <div>
+                                <h3>Weekly Compliance</h3>
+                                <p id="complianceWeekLabel">Current week</p>
+                            </div>
+                            <span class="compliance-rate" id="overallComplianceRate">72%</span>
+                        </div>
+
+                        <div class="compliance-stats">
+                            <div class="compliance-stat on-time">
+                                <span>On Time</span>
+                                <strong id="onTimeCount">62</strong>
+                            </div>
+                            <div class="compliance-stat late">
+                                <span>Late</span>
+                                <strong id="lateCount">14</strong>
+                            </div>
+                            <div class="compliance-stat missing">
+                                <span>Missing</span>
+                                <strong id="missingCount">10</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card department-compliance-card">
+                        <div class="card-header">
+                            <div>
+                                <h3>Compliance by Department</h3>
+                                <p>Weekly submission rate</p>
+                            </div>
+                        </div>
+                        <div id="departmentComplianceList" class="department-compliance-list"></div>
+                    </div>
+                </div>
 
                 <!-- DASHBOARD GRID -->
                 <div class="dashboard-grid">
@@ -453,6 +552,7 @@
                                     <th>Grade & Section</th>
                                     <th>Term</th>
                                     <th>Week</th>
+                                    <th>Due Date</th>
                                     <th>Lesson Plan File</th>
                                     <th>Status</th>
                                     <th>Action</th>
@@ -461,8 +561,8 @@
 
                             <tbody>
 
-                                <tr>
-                                    <td>Aug 24, 2026</td>
+                                <tr data-submitted-at="2026-08-24T16:20" data-due-at="2026-08-28T17:00">
+                                    <td>Aug 24, 2026 4:20 PM</td>
                                     <td>Ana Marie Villanueva</td>
                                     <td>
                                         <span class="status academic">
@@ -473,6 +573,7 @@
                                     <td>Grade 11 - STEM A</td>
                                     <td>Term 1</td>
                                     <td>Week 3</td>
+                                    <td class="lesson-due-cell">Aug 28, 2026 5:00 PM</td>
                                     <td>
                                         <span class="file-chip">
                                             <i class="fa-solid fa-file-pdf"></i>
@@ -480,8 +581,8 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <span class="status active">
-                                            Submitted
+                                        <span class="status status-on-time">
+                                            On Time
                                         </span>
                                     </td>
                                     <td>
@@ -491,8 +592,8 @@
                                     </td>
                                 </tr>
 
-                                <tr>
-                                    <td>Aug 24, 2026</td>
+                                <tr data-submitted-at="2026-08-29T09:15" data-due-at="2026-08-28T17:00">
+                                    <td>Aug 29, 2026 9:15 AM</td>
                                     <td>Ramon C. Dela Peña</td>
                                     <td>
                                         <span class="status academic">
@@ -503,6 +604,7 @@
                                     <td>Grade 11 - ABM A</td>
                                     <td>Term 1</td>
                                     <td>Week 3</td>
+                                    <td class="lesson-due-cell">Aug 28, 2026 5:00 PM</td>
                                     <td>
                                         <span class="file-chip">
                                             <i class="fa-solid fa-file-word"></i>
@@ -510,8 +612,8 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <span class="status pending">
-                                            Draft
+                                        <span class="status status-late">
+                                            Late
                                         </span>
                                     </td>
                                     <td>
@@ -521,8 +623,8 @@
                                     </td>
                                 </tr>
 
-                                <tr>
-                                    <td>Aug 25, 2026</td>
+                                <tr data-submitted-at="2026-08-25T15:40" data-due-at="2026-08-28T17:00">
+                                    <td>Aug 25, 2026 3:40 PM</td>
                                     <td>Jerome A. Bautista</td>
                                     <td>
                                         <span class="status techpro">
@@ -533,6 +635,7 @@
                                     <td>Grade 10 - Rizal</td>
                                     <td>Term 1</td>
                                     <td>Week 4</td>
+                                    <td class="lesson-due-cell">Aug 28, 2026 5:00 PM</td>
                                     <td>
                                         <span class="file-chip">
                                             <i class="fa-solid fa-file-pdf"></i>
@@ -540,8 +643,39 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <span class="status active">
-                                            Submitted
+                                        <span class="status status-on-time">
+                                            On Time
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="table-btn">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <tr data-due-at="2026-08-28T17:00">
+                                    <td>—</td>
+                                    <td>Maria L. Santos</td>
+                                    <td>
+                                        <span class="status academic">
+                                            Academic
+                                        </span>
+                                    </td>
+                                    <td>Filipino</td>
+                                    <td>Grade 10 - Bonifacio</td>
+                                    <td>Term 1</td>
+                                    <td>Week 3</td>
+                                    <td class="lesson-due-cell">Aug 28, 2026 5:00 PM</td>
+                                    <td>
+                                        <span class="file-chip">
+                                            <i class="fa-solid fa-file-circle-xmark"></i>
+                                            No file submitted
+                                        </span>
+                                    </td>
+                                    <td class="lesson-status-cell">
+                                        <span class="status status-missing">
+                                            Missing
                                         </span>
                                     </td>
                                     <td>
@@ -595,11 +729,37 @@
                         School Year
                         <input
                             type="text"
+                            id="schoolYearSetting"
                             value="2026-2027"
                         >
                     </label>
 
-                    <button class="primary-btn">
+                    <div class="settings-section-divider"></div>
+
+                    <div class="settings-section-title">Lesson Plan Deadline</div>
+                    <p class="form-help settings-description">Set the default weekly deadline used for new lesson-plan cycles. You can choose any day from Monday to Friday and the exact submission time.</p>
+
+                    <div class="settings-deadline-grid">
+                        <label>
+                            Deadline Day
+                            <select id="deadlineDaySetting">
+                                <option value="1">Monday</option>
+                                <option value="2">Tuesday</option>
+                                <option value="3">Wednesday</option>
+                                <option value="4">Thursday</option>
+                                <option value="5" selected>Friday</option>
+                            </select>
+                        </label>
+
+                        <label>
+                            Deadline Time
+                            <input type="time" id="deadlineTimeSetting" value="17:00">
+                        </label>
+                    </div>
+
+                    <div class="settings-deadline-preview" id="deadlinePreview">Default weekly deadline: Friday, 5:00 PM</div>
+
+                    <button class="primary-btn" id="saveSettingsBtn" type="button">
                         Save Settings
                     </button>
 
@@ -658,6 +818,16 @@
                 <label>
                     Week
                     <select id="newLessonWeek" required></select>
+                </label>
+
+                <label>
+                    Due Date & Time
+                    <input
+                        type="datetime-local"
+                        id="newLessonDueDate"
+                        required
+                    >
+                    <small class="form-help" id="dueDateHelp">Weekly deadline: Friday, 5:00 PM</small>
                 </label>
 
                 <label>
