@@ -53,15 +53,6 @@ const appRoot =
 const loginForm =
     document.getElementById("loginForm");
 
-const loginError =
-    document.getElementById("loginError");
-
-const togglePassword =
-    document.getElementById("togglePassword");
-
-const loginPasswordInput =
-    document.getElementById("loginPassword");
-
 const ADMIN_ONLY_PAGES =
     ["navTeachers", "navSettings"];
 
@@ -78,8 +69,6 @@ function showLoginPage() {
 
     appRoot.classList.add("hidden");
     loginPage.classList.remove("hidden");
-
-    loginError.classList.remove("show");
 
     currentUser = null;
 
@@ -133,28 +122,6 @@ function applyUserRole(account) {
 }
 
 
-if (togglePassword) {
-
-    togglePassword.addEventListener("click", function() {
-
-        const isPassword =
-            loginPasswordInput.type === "password";
-
-        loginPasswordInput.type =
-            isPassword
-                ? "text"
-                : "password";
-
-        this.innerHTML =
-            isPassword
-                ? '<i class="fa-regular fa-eye-slash"></i>'
-                : '<i class="fa-regular fa-eye"></i>';
-
-    });
-
-}
-
-
 if (loginForm) {
 
     loginForm.addEventListener(
@@ -163,44 +130,19 @@ if (loginForm) {
 
             event.preventDefault();
 
+            /* No credential fields anymore, so the Login
+               button simply signs in as the default (admin)
+               demo account. */
 
-            const username =
-                document.getElementById(
-                    "loginUsername"
-                ).value.trim();
+            const account = DEMO_ACCOUNTS[0];
 
-            const password =
-                loginPasswordInput.value;
+            currentUser = account;
 
+            applyUserRole(account);
 
-            const account =
-                DEMO_ACCOUNTS.find(function(acc) {
+            showApp();
 
-                    return (
-                        acc.username === username &&
-                        acc.password === password
-                    );
-
-                });
-
-
-            if (account) {
-
-                loginError.classList.remove("show");
-
-                currentUser = account;
-
-                applyUserRole(account);
-
-                showApp();
-
-                showPage("dashboard");
-
-            } else {
-
-                loginError.classList.add("show");
-
-            }
+            showPage("dashboard");
 
         }
     );
