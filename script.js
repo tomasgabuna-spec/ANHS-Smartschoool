@@ -21,6 +21,14 @@ const DEMO_ACCOUNTS = [
         initials: "AD"
     },
     {
+        username: "depthead",
+        password: "depthead123",
+        role: "department-head",
+        name: "Department Head",
+        title: "Department Head",
+        initials: "DH"
+    },
+    {
         username: "adviser1",
         password: "adviser123",
         role: "adviser",
@@ -63,8 +71,10 @@ const loginPasswordInput =
     document.getElementById("loginPassword");
 
 const ADMIN_ONLY_PAGES =
-    ["navTeachers", "navSettings"];
+    ["navTeachers", "navSettings", "navSubmissionTracker"];
 
+const REVIEWER_ROLES = ["admin", "department-head"];
+const TEACHER_ROLES = ["adviser", "teacher"];
 const TRACKER_NAV_ID = "navSubmissionTracker";
 
 
@@ -94,44 +104,94 @@ function showLoginPage() {
 }
 
 
-function applyUserRole(account) {
+function isReviewer() {
+    return currentUser && REVIEWER_ROLES.includes(currentUser.role);
+}
 
-    /* Sidebar + topbar identity */
+function isTeacher() {
+    return currentUser && TEACHER_ROLES.includes(currentUser.role);
+}
+
+function applyUserRole(account) {
 
     const initials = account.initials;
 
     document.getElementById("sidebarAvatar").textContent = initials;
     document.getElementById("sidebarUserName").textContent = account.name;
     document.getElementById("sidebarUserRole").textContent = account.title;
-
     document.getElementById("topbarAvatar").textContent = initials;
     document.getElementById("topbarUserName").textContent = account.name;
     document.getElementById("topbarUserRole").textContent = account.title;
 
-    pageNames.dashboard.subtitle =
-        "Welcome back, " + account.name + "!";
-
-
-    /* Admin-only navigation is hidden from advisers, since
-       an adviser should only encode/manage their own
-       advisory class, not run the whole school. */
-
-    const isAdviser = account.role === "adviser";
+    const isTeacherAccount = TEACHER_ROLES.includes(account.role);
+    const isReviewerAccount = REVIEWER_ROLES.includes(account.role);
 
     ADMIN_ONLY_PAGES.forEach(function(id) {
-
-        const navEl =
-            document.getElementById(id);
-
-        if (navEl) {
-
-            navEl.classList.toggle("hidden", isAdviser);
-
-        }
-
+        const navEl = document.getElementById(id);
+        if (navEl) navEl.classList.toggle("hidden", !isReviewerAccount);
     });
 
+    // Teachers only need their own Dashboard and Lesson Plans/DLL workspace.
+    const quickAdd = document.querySelector('.quick-action[data-page="teachers"]');
+    if (quickAdd) quickAdd.classList.toggle("hidden", isTeacherAccount);
 
+    const addLessonBtn = document.getElementById("addLessonPlanBtn");
+    if (addLessonBtn) addLessonBtn.classList.toggle("hidden", !isTeacherAccount);
+
+    const accessBanner = document.getElementById("teacherAccessBanner");
+    if (accessBanner) accessBanner.classList.toggle("hidden", !isTeacherAccount);
+
+    const lessonSearch = document.getElementById("lessonPlanSearch");
+    if (lessonSearch) lessonSearch.placeholder = isTeacherAccount ? "Search my submissions..." : "Search lesson plans...";
+
+    const pageHeaderText = document.querySelector("#lessonplans .page-header p");
+    if (pageHeaderText) {
+        pageHeaderText.textContent = isTeacherAccount
+            ? "Upload and monitor your own Daily Lesson Log (DLL) and lesson plans."
+            : "Review and manage teachers' Daily Lesson Logs (DLL) and lesson plans.";
+    }
+
+    const teacherSelect = document.getElementById("newLessonTeacher");
+    if (teacherSelect) {
+        Array.from(teacherSelect.options).forEach(option => {
+            if (option.value) option.hidden = isTeacherAccount && option.value !== account.name;
+        });
+        if (isTeacherAccount) {
+            teacherSelect.value = account.name;
+            teacherSelect.disabled = true;
+            teacherSelect.dispatchEvent(new Event("change"));
+        } else {
+            teacherSelect.disabled = false;
+        }
+    }
+
+    applyLessonPlanAccess();
+}
+
+function applyLessonPlanAccess() {
+    const rows = document.querySelectorAll("#lessonPlanTable tbody tr");
+    const teacherName = currentUser ? currentUser.name : "";
+    const teacherAccount = isTeacher();
+
+    rows.forEach(row => {
+        const nameCell = row.querySelector("td:nth-child(2)");
+        const owner = nameCell ? nameCell.textContent.trim() : "";
+        const belongsToTeacher = !teacherAccount || owner === teacherName;
+        row.dataset.ownerVisible = belongsToTeacher ? "true" : "false";
+        row.classList.toggle("role-hidden-row", !belongsToTeacher);
+
+        const reviewerControls = row.querySelectorAll(".reviewer-select, .assign-review-btn");
+        reviewerControls.forEach(el => el.classList.toggle("hidden", !isReviewer()));
+
+        const preview = row.querySelector(".preview-lesson-btn");
+        if (preview) {
+            preview.classList.toggle("hidden", !belongsToTeacher && !isReviewer());
+            preview.title = isReviewer() ? "Preview uploaded file" : "Preview my uploaded file";
+        }
+    });
+
+    const table = document.getElementById("lessonPlanTable");
+    if (table) table.classList.toggle("teacher-private-view", teacherAccount);
 }
 
 
@@ -196,7 +256,8 @@ if (loginForm) {
 
                 showApp();
 
-                showPage("dashboard");
+                showPage(isTeacher() ? "lessonplans" : "dashboard");
+                applyLessonPlanAccess();
 
             } else {
 
@@ -251,6 +312,10 @@ const pageNames = {
 
 
 function showPage(pageName) {
+
+    if (isTeacher() && ["teachers", "submissiontracker", "settings"].includes(pageName)) {
+        pageName = "lessonplans";
+    }
 
     pages.forEach(page => {
 
@@ -1027,9 +1092,9 @@ if (lessonPlanForm) {
                 ).value;
 
             const teacher =
-                document.getElementById(
-                    "newLessonTeacher"
-                ).value;
+                isTeacher()
+                    ? currentUser.name
+                    : document.getElementById("newLessonTeacher").value;
 
             const department =
                 document.getElementById(
@@ -1141,6 +1206,9 @@ if (lessonPlanForm) {
 
             row.dataset.submittedAt = submittedAt;
             row.dataset.dueAt = dueAt;
+            row.dataset.fileName = file.name;
+            row.dataset.fileUrl = URL.createObjectURL(file);
+            row.dataset.reviewer = "admin";
 
             row.innerHTML = `
 
@@ -1177,21 +1245,26 @@ if (lessonPlanForm) {
                     </span>
                 </td>
 
-                <td>
-
-                    <button class="table-btn">
-
-                        <i class="fa-solid fa-eye"></i>
-
-                    </button>
-
+                <td class="lesson-action-cell">
+                    <div class="lesson-actions">
+                        <button type="button" class="table-btn preview-lesson-btn" title="Preview lesson plan">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                        <select class="reviewer-select" title="Choose who will check this file">
+                            <option value="admin">Admin Check</option>
+                            <option value="department-head">Department Head Check</option>
+                        </select>
+                        <button type="button" class="table-btn assign-review-btn" title="Assign reviewer">
+                            <i class="fa-solid fa-user-check"></i>
+                        </button>
+                    </div>
                 </td>
 
             `;
 
 
             tbody.appendChild(row);
-
+            applyLessonPlanAccess();
 
             updateDashboardCounts();
         updateComplianceDashboard();
@@ -1447,14 +1520,19 @@ if (teacherForm) {
 
                 <td>${postGrad}</td>
 
-                <td>
-
-                    <button class="table-btn">
-
-                        <i class="fa-solid fa-eye"></i>
-
-                    </button>
-
+                <td class="lesson-action-cell">
+                    <div class="lesson-actions">
+                        <button type="button" class="table-btn preview-lesson-btn" title="Preview lesson plan">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                        <select class="reviewer-select" title="Choose who will check this file">
+                            <option value="admin">Admin Check</option>
+                            <option value="department-head">Department Head Check</option>
+                        </select>
+                        <button type="button" class="table-btn assign-review-btn" title="Assign reviewer">
+                            <i class="fa-solid fa-user-check"></i>
+                        </button>
+                    </div>
                 </td>
 
             `;
@@ -1504,25 +1582,113 @@ if (teacherForm) {
 
 
 /* ================================
-   NOTIFICATION
+   LESSON PLAN PREVIEW + REVIEW ROUTING
 ================================ */
 
-const notificationBtn =
-    document.querySelector(
-        ".notification-btn"
-    );
+const lessonPreviewModal = document.getElementById("lessonPreviewModal");
+const closeLessonPreviewModal = document.getElementById("closeLessonPreviewModal");
+const closePreviewBtn = document.getElementById("closePreviewBtn");
+const saveReviewerBtn = document.getElementById("saveReviewerBtn");
+const previewReviewerSelect = document.getElementById("previewReviewerSelect");
+let activeLessonRow = null;
 
+function reviewerLabel(value) {
+    return value === "department-head" ? "Department Head" : "Admin / School Administrator";
+}
 
-notificationBtn.addEventListener(
-    "click",
-    function() {
-
-        alert(
-            "You have 3 new notifications."
-        );
-
+function openLessonPreview(row) {
+    if (!lessonPreviewModal) return;
+    activeLessonRow = row;
+    const cells = row.querySelectorAll("td");
+    document.getElementById("previewTeacher").textContent = cells[1]?.textContent.trim() || "—";
+    document.getElementById("previewSubject").textContent = cells[3]?.textContent.trim() || "—";
+    document.getElementById("previewSection").textContent = cells[4]?.textContent.trim() || "—";
+    document.getElementById("previewTermWeek").textContent = `${cells[5]?.textContent.trim() || "—"} / ${cells[6]?.textContent.trim() || "—"}`;
+    document.getElementById("previewStatus").innerHTML = cells[9]?.innerHTML || "—";
+    const select = row.querySelector(".reviewer-select");
+    const reviewer = row.dataset.reviewer || select?.value || "admin";
+    previewReviewerSelect.value = reviewer;
+    document.getElementById("previewReviewer").textContent = reviewerLabel(reviewer);
+    const fileChip = row.querySelector(".file-chip");
+    const fileName = row.dataset.fileName || fileChip?.textContent.trim() || "No file submitted";
+    document.getElementById("previewFileName").textContent = fileName;
+    const frame = document.getElementById("lessonFileFrame");
+    const message = document.getElementById("previewFileMessage");
+    frame.hidden = true;
+    frame.removeAttribute("src");
+    if (row.dataset.fileUrl && /\.pdf$/i.test(fileName)) {
+        frame.src = row.dataset.fileUrl;
+        frame.hidden = false;
+        message.textContent = "PDF preview is available below.";
+    } else if (fileChip && !/No file submitted/i.test(fileName)) {
+        message.textContent = "File is uploaded. Use the assigned checker action to review the document.";
+    } else {
+        message.textContent = "No uploaded file is available for preview.";
     }
-);
+    lessonPreviewModal.classList.add("show");
+}
+
+function closeLessonPreview() {
+    lessonPreviewModal?.classList.remove("show");
+    const frame = document.getElementById("lessonFileFrame");
+    if (frame) frame.removeAttribute("src");
+    activeLessonRow = null;
+}
+
+document.addEventListener("click", function(event) {
+    const previewButton = event.target.closest(".preview-lesson-btn");
+    const assignButton = event.target.closest(".assign-review-btn");
+    if (previewButton) {
+        const row = previewButton.closest("tr");
+        const owner = row?.querySelector("td:nth-child(2)")?.textContent.trim();
+        if (isTeacher() && owner !== currentUser.name) {
+            alert("Access denied. Teachers can only open their own uploaded files.");
+            return;
+        }
+        openLessonPreview(row);
+        return;
+    }
+    if (assignButton) {
+        if (!isReviewer()) {
+            alert("Only Admin or Department Head can assign a checker.");
+            return;
+        }
+        const row = assignButton.closest("tr");
+        const select = row?.querySelector(".reviewer-select");
+        if (row && select) {
+            row.dataset.reviewer = select.value;
+            alert(`File assigned to ${reviewerLabel(select.value)} for checking.`);
+        }
+    }
+});
+
+document.addEventListener("change", function(event) {
+    if (!event.target.matches(".reviewer-select")) return;
+    const row = event.target.closest("tr");
+    if (row) row.dataset.reviewer = event.target.value;
+});
+
+closeLessonPreviewModal?.addEventListener("click", closeLessonPreview);
+closePreviewBtn?.addEventListener("click", closeLessonPreview);
+lessonPreviewModal?.addEventListener("click", function(event) {
+    if (event.target === lessonPreviewModal) closeLessonPreview();
+});
+saveReviewerBtn?.addEventListener("click", function() {
+    if (!isReviewer()) {
+        alert("Only Admin or Department Head can assign a checker.");
+        return;
+    }
+    if (!activeLessonRow) return;
+    const reviewer = previewReviewerSelect.value;
+    activeLessonRow.dataset.reviewer = reviewer;
+    const rowSelect = activeLessonRow.querySelector(".reviewer-select");
+    if (rowSelect) rowSelect.value = reviewer;
+    document.getElementById("previewReviewer").textContent = reviewerLabel(reviewer);
+    alert(`File assigned to ${reviewerLabel(reviewer)} for checking.`);
+});
+
+
+applyLessonPlanAccess();
 
 
 /* ================================

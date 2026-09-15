@@ -2839,3 +2839,35 @@ tr.syllabus-group-row td {
 .tracker-no-results i {
     margin-right: 7px;
 }
+
+
+/* ==============================
+   LESSON PLAN ACTIONS / PREVIEW
+================================= */
+.lesson-action-cell { min-width: 250px; }
+.lesson-actions { display:flex; align-items:center; gap:7px; }
+.reviewer-select { border:1px solid var(--border); background:#fff; border-radius:7px; padding:7px 8px; font-size:10px; min-width:145px; outline:none; }
+.reviewer-select:focus { border-color:var(--primary); }
+.lesson-preview-modal { max-width:900px; max-height:90vh; overflow:auto; }
+.preview-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:18px; }
+.preview-summary > div { background:#f8fafc; border:1px solid var(--border); border-radius:10px; padding:12px; }
+.preview-summary span { display:block; font-size:9px; color:var(--muted); margin-bottom:5px; text-transform:uppercase; letter-spacing:.04em; }
+.preview-summary strong { font-size:12px; }
+.file-preview-panel { border:1px dashed var(--border); border-radius:12px; min-height:180px; padding:20px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; background:#fafafa; }
+.file-preview-panel > i { font-size:36px; color:var(--primary); margin-bottom:10px; }
+.file-preview-panel strong { font-size:14px; }
+.file-preview-panel p { font-size:11px; color:var(--muted); max-width:600px; }
+#lessonFileFrame { width:100%; height:420px; border:1px solid var(--border); border-radius:8px; margin-top:15px; background:#fff; }
+.review-routing { margin-top:18px; padding:15px; border-radius:10px; background:#f8fafc; display:flex; align-items:end; gap:12px; }
+.review-routing label { flex:1; font-size:11px; font-weight:600; }
+.review-routing select { width:100%; margin-top:7px; padding:10px; border:1px solid var(--border); border-radius:8px; background:#fff; font-size:12px; }
+@media (max-width:700px) { .preview-summary { grid-template-columns:1fr 1fr; } .lesson-actions { flex-wrap:wrap; } .review-routing { flex-direction:column; align-items:stretch; } }
+
+
+/* Role-based access */
+.role-hidden-row { display: none !important; }
+.access-banner { display:flex; align-items:flex-start; gap:12px; padding:14px 16px; margin:0 0 18px; border:1px solid #dbe4ee; border-radius:12px; background:#f7fafc; color:#334155; }
+.access-banner > i { margin-top:2px; }
+.access-banner div { display:flex; flex-direction:column; gap:3px; }
+.access-banner span { font-size:.9rem; color:#64748b; }
+.hidden { display:none !important; }

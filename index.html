@@ -93,7 +93,8 @@
 
             <p class="login-hint">
                 Admin: <strong>admin</strong> / <strong>admin123</strong><br>
-                Adviser: <strong>adviser1</strong> / <strong>adviser123</strong>
+                Department Head: <strong>depthead</strong> / <strong>depthead123</strong><br>
+                Teacher: <strong>adviser1</strong> / <strong>adviser123</strong>
             </p>
 
         </form>
@@ -195,11 +196,6 @@
 
 
             <div class="topbar-right">
-
-                <button class="icon-button notification-btn">
-                    <i class="fa-regular fa-bell"></i>
-                    <span class="notification-dot"></span>
-                </button>
 
                 <div class="profile">
 
@@ -445,10 +441,19 @@
                                     <td>Teacher III</td>
                                     <td>9</td>
                                     <td>MA Graduate</td>
-                                    <td>
-                                        <button class="table-btn">
-                                            <i class="fa-solid fa-eye"></i>
-                                        </button>
+                                    <td class="lesson-action-cell">
+                                        <div class="lesson-actions">
+                                            <button type="button" class="table-btn preview-lesson-btn" title="Preview lesson plan">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </button>
+                                            <select class="reviewer-select" title="Choose who will check this file">
+                                                <option value="admin">Admin Check</option>
+                                                <option value="department-head">Department Head Check</option>
+                                            </select>
+                                            <button type="button" class="table-btn assign-review-btn" title="Assign reviewer">
+                                                <i class="fa-solid fa-user-check"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
 
@@ -464,10 +469,19 @@
                                     <td>Master Teacher I</td>
                                     <td>16</td>
                                     <td>With Doctorate Units</td>
-                                    <td>
-                                        <button class="table-btn">
-                                            <i class="fa-solid fa-eye"></i>
-                                        </button>
+                                    <td class="lesson-action-cell">
+                                        <div class="lesson-actions">
+                                            <button type="button" class="table-btn preview-lesson-btn" title="Preview lesson plan">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </button>
+                                            <select class="reviewer-select" title="Choose who will check this file">
+                                                <option value="admin">Admin Check</option>
+                                                <option value="department-head">Department Head Check</option>
+                                            </select>
+                                            <button type="button" class="table-btn assign-review-btn" title="Assign reviewer">
+                                                <i class="fa-solid fa-user-check"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
 
@@ -483,10 +497,19 @@
                                     <td>Teacher I</td>
                                     <td>4</td>
                                     <td>With MA Units</td>
-                                    <td>
-                                        <button class="table-btn">
-                                            <i class="fa-solid fa-eye"></i>
-                                        </button>
+                                    <td class="lesson-action-cell">
+                                        <div class="lesson-actions">
+                                            <button type="button" class="table-btn preview-lesson-btn" title="Preview lesson plan">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </button>
+                                            <select class="reviewer-select" title="Choose who will check this file">
+                                                <option value="admin">Admin Check</option>
+                                                <option value="department-head">Department Head Check</option>
+                                            </select>
+                                            <button type="button" class="table-btn assign-review-btn" title="Assign reviewer">
+                                                <i class="fa-solid fa-user-check"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
 
@@ -614,6 +637,10 @@
 
                 </div>
 
+                <div class="access-banner" id="teacherAccessBanner">
+                    <i class="fa-solid fa-lock"></i>
+                    <div><strong>Private teacher view</strong><span>You can upload and view only your own submitted files. Admin and Department Head accounts can review all teacher submissions.</span></div>
+                </div>
 
                 <div class="card">
 
@@ -682,10 +709,19 @@
                                             On Time
                                         </span>
                                     </td>
-                                    <td>
-                                        <button class="table-btn">
-                                            <i class="fa-solid fa-eye"></i>
-                                        </button>
+                                    <td class="lesson-action-cell">
+                                        <div class="lesson-actions">
+                                            <button type="button" class="table-btn preview-lesson-btn" title="Preview lesson plan">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </button>
+                                            <select class="reviewer-select" title="Choose who will check this file">
+                                                <option value="admin">Admin Check</option>
+                                                <option value="department-head">Department Head Check</option>
+                                            </select>
+                                            <button type="button" class="table-btn assign-review-btn" title="Assign reviewer">
+                                                <i class="fa-solid fa-user-check"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
 
@@ -713,10 +749,19 @@
                                             Late
                                         </span>
                                     </td>
-                                    <td>
-                                        <button class="table-btn">
-                                            <i class="fa-solid fa-eye"></i>
-                                        </button>
+                                    <td class="lesson-action-cell">
+                                        <div class="lesson-actions">
+                                            <button type="button" class="table-btn preview-lesson-btn" title="Preview lesson plan">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </button>
+                                            <select class="reviewer-select" title="Choose who will check this file">
+                                                <option value="admin">Admin Check</option>
+                                                <option value="department-head">Department Head Check</option>
+                                            </select>
+                                            <button type="button" class="table-btn assign-review-btn" title="Assign reviewer">
+                                                <i class="fa-solid fa-user-check"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
 
@@ -744,10 +789,19 @@
                                             On Time
                                         </span>
                                     </td>
-                                    <td>
-                                        <button class="table-btn">
-                                            <i class="fa-solid fa-eye"></i>
-                                        </button>
+                                    <td class="lesson-action-cell">
+                                        <div class="lesson-actions">
+                                            <button type="button" class="table-btn preview-lesson-btn" title="Preview lesson plan">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </button>
+                                            <select class="reviewer-select" title="Choose who will check this file">
+                                                <option value="admin">Admin Check</option>
+                                                <option value="department-head">Department Head Check</option>
+                                            </select>
+                                            <button type="button" class="table-btn assign-review-btn" title="Assign reviewer">
+                                                <i class="fa-solid fa-user-check"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
 
@@ -775,10 +829,19 @@
                                             Missing
                                         </span>
                                     </td>
-                                    <td>
-                                        <button class="table-btn">
-                                            <i class="fa-solid fa-eye"></i>
-                                        </button>
+                                    <td class="lesson-action-cell">
+                                        <div class="lesson-actions">
+                                            <button type="button" class="table-btn preview-lesson-btn" title="Preview lesson plan">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </button>
+                                            <select class="reviewer-select" title="Choose who will check this file">
+                                                <option value="admin">Admin Check</option>
+                                                <option value="department-head">Department Head Check</option>
+                                            </select>
+                                            <button type="button" class="table-btn assign-review-btn" title="Assign reviewer">
+                                                <i class="fa-solid fa-user-check"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
 
@@ -868,6 +931,51 @@
 
     </main>
 
+</div>
+
+<!-- ================= LESSON PLAN PREVIEW / REVIEW MODAL ================= -->
+<div class="modal" id="lessonPreviewModal">
+    <div class="modal-content lesson-preview-modal">
+        <div class="modal-header">
+            <div>
+                <h2>Lesson Plan / DLL Preview</h2>
+                <p>Review the uploaded file and confirm who will check it.</p>
+            </div>
+            <button class="close-modal" id="closeLessonPreviewModal" type="button">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="preview-summary">
+            <div><span>Teacher</span><strong id="previewTeacher">—</strong></div>
+            <div><span>Subject</span><strong id="previewSubject">—</strong></div>
+            <div><span>Grade & Section</span><strong id="previewSection">—</strong></div>
+            <div><span>Term / Week</span><strong id="previewTermWeek">—</strong></div>
+            <div><span>Submission Status</span><strong id="previewStatus">—</strong></div>
+            <div><span>Reviewer</span><strong id="previewReviewer">—</strong></div>
+        </div>
+        <div class="file-preview-panel" id="filePreviewPanel">
+            <i class="fa-solid fa-file-lines"></i>
+            <strong id="previewFileName">No file</strong>
+            <p id="previewFileMessage">The uploaded document will appear here when a browser preview is available.</p>
+            <iframe id="lessonFileFrame" title="Lesson plan file preview" hidden></iframe>
+        </div>
+        <div class="review-routing">
+            <label>
+                Checked by
+                <select id="previewReviewerSelect">
+                    <option value="admin">Admin / School Administrator</option>
+                    <option value="department-head">Department Head</option>
+                </select>
+            </label>
+            <button type="button" class="primary-btn" id="saveReviewerBtn">
+                <i class="fa-solid fa-user-check"></i>
+                Assign Checker
+            </button>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="outline-btn" id="closePreviewBtn">Close</button>
+        </div>
+    </div>
 </div>
 
 <!-- ================= LESSON PLAN MODAL ================= -->
