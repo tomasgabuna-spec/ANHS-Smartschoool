@@ -1676,7 +1676,13 @@ function renderSubmissionTracker() {
 
     let counts = { "On Time": 0, "Late": 0, "Missing": 0 };
 
-    body.innerHTML = teachers.map(teacher => {
+    if (!teachers.length) {
+        body.innerHTML = `<tr><td colspan="7" class="tracker-no-results">
+            <i class="fa-solid fa-user-slash"></i>
+            No teachers match the current search.
+        </td></tr>`;
+    } else {
+        body.innerHTML = teachers.map(teacher => {
         const compliance = getTeacherWeekCompliance(teacher.name, offsetWeeks, termFilter);
         counts[compliance.status]++;
         const departmentClass = teacher.department === "TechPro" ? "techpro" : "academic";
@@ -1696,7 +1702,8 @@ function renderSubmissionTracker() {
             <td><span class="status ${getStatusClass(compliance.status)}">${compliance.status}</span></td>
             <td><div class="tracker-compliance-cell"><div class="tracker-mini-bar"><span style="width:${rate}"></span></div><strong>${rate}</strong></div></td>
         </tr>`;
-    }).join("");
+        }).join("");
+    }
 
     document.getElementById("trackerTotalTeachers").textContent = teachers.length;
     document.getElementById("trackerOnTime").textContent = counts["On Time"];

@@ -500,6 +500,103 @@
 
             </div>
 
+
+            <!-- SUBMISSION TRACKER -->
+            <div class="page" id="submissiontracker">
+
+                <div class="page-header">
+                    <div>
+                        <h2>Submission Tracker</h2>
+                        <p>See every teacher's weekly lesson-plan compliance — including teachers who have not submitted.</p>
+                    </div>
+                </div>
+
+                <div class="tracker-alert">
+                    <div class="tracker-alert-icon">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </div>
+                    <div>
+                        <strong>Teacher-based monitoring</strong>
+                        <p>This view uses one row per teacher, not one row per submitted file. A teacher with no submission is automatically shown as <b>Missing</b>.</p>
+                    </div>
+                </div>
+
+                <div class="tracker-summary-grid">
+                    <div class="tracker-summary-card total">
+                        <div class="tracker-summary-icon"><i class="fa-solid fa-users"></i></div>
+                        <div><span>Total Teachers</span><strong id="trackerTotalTeachers">0</strong></div>
+                    </div>
+                    <div class="tracker-summary-card on-time">
+                        <div class="tracker-summary-icon"><i class="fa-solid fa-circle-check"></i></div>
+                        <div><span>On Time</span><strong id="trackerOnTime">0</strong></div>
+                    </div>
+                    <div class="tracker-summary-card late">
+                        <div class="tracker-summary-icon"><i class="fa-solid fa-clock"></i></div>
+                        <div><span>Late</span><strong id="trackerLate">0</strong></div>
+                    </div>
+                    <div class="tracker-summary-card missing">
+                        <div class="tracker-summary-icon"><i class="fa-solid fa-circle-xmark"></i></div>
+                        <div><span>Missing</span><strong id="trackerMissing">0</strong></div>
+                    </div>
+                </div>
+
+                <div class="card submission-tracker-card">
+
+                    <div class="card-header tracker-header">
+                        <div>
+                            <h3>Weekly Teacher Compliance</h3>
+                            <p id="trackerWeekLabel">Current week</p>
+                        </div>
+                        <div class="tracker-header-badge">
+                            <i class="fa-solid fa-user-check"></i>
+                            <span>One row per teacher</span>
+                        </div>
+                    </div>
+
+                    <div class="table-tools tracker-tools">
+                        <div class="search-box">
+                            <i class="fa-solid fa-search"></i>
+                            <input type="text" id="trackerSearch" placeholder="Search teacher...">
+                        </div>
+
+                        <select id="trackerWeekFilter" class="outline-select">
+                            <option value="current">Current Week</option>
+                            <option value="previous">Previous Week</option>
+                        </select>
+
+                        <select id="trackerTermFilter" class="outline-select">
+                            <option value="all">All Terms</option>
+                            <option value="Term 1">Term 1</option>
+                            <option value="Term 2">Term 2</option>
+                            <option value="Term 3">Term 3</option>
+                        </select>
+                    </div>
+
+                    <div class="table-container">
+                        <table id="submissionTrackerTable">
+                            <thead>
+                                <tr>
+                                    <th>Teacher</th>
+                                    <th>Department</th>
+                                    <th>Term / Week</th>
+                                    <th>Due Date</th>
+                                    <th>Submitted</th>
+                                    <th>Compliance</th>
+                                    <th>Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody id="submissionTrackerBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="tracker-empty-note">
+                        <i class="fa-solid fa-shield-check"></i>
+                        <span><strong>Important:</strong> Missing teachers remain visible because the tracker starts from the complete Teachers list and then checks lesson-plan submissions.</span>
+                    </div>
+                </div>
+
+            </div>
+
             <!-- LESSON PLANS / DAILY LESSON LOG -->
             <div class="page" id="lessonplans">
 
