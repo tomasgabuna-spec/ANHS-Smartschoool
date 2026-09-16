@@ -36,11 +36,11 @@
         <form id="loginForm">
 
             <label>
-                Username / ID
+                Email
                 <input
-                    type="text"
+                    type="email"
                     id="loginUsername"
-                    placeholder="Enter your username"
+                    placeholder="Enter your school email"
                     autocomplete="username"
                     required
                 >
@@ -92,8 +92,7 @@
             </button>
 
             <p class="login-hint">
-                Admin: <strong>admin</strong> / <strong>admin123</strong><br>
-                Teacher: <strong>teacher1</strong> / <strong>teacher123</strong>
+                Sign in with the email and password your admin created for you in Firebase.
             </p>
 
         </form>
@@ -467,117 +466,7 @@
 
                             <tbody>
 
-                                <tr data-department="Academic">
-                                    <td>Ana Marie Villanueva</td>
-                                    <td>Female</td>
-                                    <td>34</td>
-                                    <td>
-                                        <span class="status academic">
-                                            Academic
-                                        </span>
-                                    </td>
-                                    <td>Teacher III</td>
-                                    <td>9</td>
-                                    <td>MA Graduate</td>
-                                    <td class="lesson-action-cell">
-                                        <div class="lesson-actions">
-                                            <button type="button" class="table-btn preview-lesson-btn" title="Preview lesson plan">
-                                                <i class="fa-solid fa-eye"></i>
-                                            </button>
-                                            <select class="reviewer-select" title="Choose who will check this file">
-                                                <option value="admin">Admin Check</option>
-                                                <option value="department-head">Department Head Check</option>
-                                            </select>
-                                            <button type="button" class="table-btn assign-review-btn" title="Assign reviewer">
-                                                <i class="fa-solid fa-user-check"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <tr data-department="Academic">
-                                    <td>Ramon C. Dela Peña</td>
-                                    <td>Male</td>
-                                    <td>41</td>
-                                    <td>
-                                        <span class="status academic">
-                                            Academic
-                                        </span>
-                                    </td>
-                                    <td>Master Teacher I</td>
-                                    <td>16</td>
-                                    <td>With Doctorate Units</td>
-                                    <td class="lesson-action-cell">
-                                        <div class="lesson-actions">
-                                            <button type="button" class="table-btn preview-lesson-btn" title="Preview lesson plan">
-                                                <i class="fa-solid fa-eye"></i>
-                                            </button>
-                                            <select class="reviewer-select" title="Choose who will check this file">
-                                                <option value="admin">Admin Check</option>
-                                                <option value="department-head">Department Head Check</option>
-                                            </select>
-                                            <button type="button" class="table-btn assign-review-btn" title="Assign reviewer">
-                                                <i class="fa-solid fa-user-check"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <tr data-department="TechPro">
-                                    <td>Jerome A. Bautista</td>
-                                    <td>Male</td>
-                                    <td>29</td>
-                                    <td>
-                                        <span class="status techpro">
-                                            TechPro
-                                        </span>
-                                    </td>
-                                    <td>Teacher I</td>
-                                    <td>4</td>
-                                    <td>With MA Units</td>
-                                    <td class="lesson-action-cell">
-                                        <div class="lesson-actions">
-                                            <button type="button" class="table-btn preview-lesson-btn" title="Preview lesson plan">
-                                                <i class="fa-solid fa-eye"></i>
-                                            </button>
-                                            <select class="reviewer-select" title="Choose who will check this file">
-                                                <option value="admin">Admin Check</option>
-                                                <option value="department-head">Department Head Check</option>
-                                            </select>
-                                            <button type="button" class="table-btn assign-review-btn" title="Assign reviewer">
-                                                <i class="fa-solid fa-user-check"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <tr data-department="Academic">
-                                    <td>Maria L. Santos</td>
-                                    <td>Female</td>
-                                    <td>36</td>
-                                    <td>
-                                        <span class="status academic">
-                                            Academic
-                                        </span>
-                                    </td>
-                                    <td>Teacher II</td>
-                                    <td>11</td>
-                                    <td>MA Graduate</td>
-                                    <td class="lesson-action-cell">
-                                        <div class="lesson-actions">
-                                            <button type="button" class="table-btn preview-lesson-btn" title="Preview lesson plan">
-                                                <i class="fa-solid fa-eye"></i>
-                                            </button>
-                                            <select class="reviewer-select" title="Choose who will check this file">
-                                                <option value="admin">Admin Check</option>
-                                                <option value="department-head">Department Head Check</option>
-                                            </select>
-                                            <button type="button" class="table-btn assign-review-btn" title="Assign reviewer">
-                                                <i class="fa-solid fa-user-check"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
+                            <!-- Rows are rendered live from Firestore by renderTeacherTable() in script.js -->
 
                             </tbody>
 
@@ -747,165 +636,7 @@
 
                             <tbody>
 
-                                <tr data-submitted-at="2026-09-14T16:20" data-due-at="2026-09-18T17:00">
-                                    <td>Sep 14, 2026 4:20 PM</td>
-                                    <td>Ana Marie Villanueva</td>
-                                    <td>
-                                        <span class="status academic">
-                                            Academic
-                                        </span>
-                                    </td>
-                                    <td>General Mathematics</td>
-                                    <td>Grade 11 - STEM A</td>
-                                    <td>Term 1</td>
-                                    <td>Week 3</td>
-                                    <td class="lesson-due-cell">Sep 18, 2026 5:00 PM</td>
-                                    <td>
-                                        <span class="file-chip">
-                                            <i class="fa-solid fa-file-pdf"></i>
-                                            DLL_GenMath_Functions.pdf
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="status status-on-time">
-                                            On Time
-                                        </span>
-                                    </td>
-                                    <td class="lesson-action-cell">
-                                        <div class="lesson-actions">
-                                            <button type="button" class="table-btn preview-lesson-btn" title="Preview lesson plan">
-                                                <i class="fa-solid fa-eye"></i>
-                                            </button>
-                                            <select class="reviewer-select" title="Choose who will check this file">
-                                                <option value="admin">Admin Check</option>
-                                                <option value="department-head">Department Head Check</option>
-                                            </select>
-                                            <button type="button" class="table-btn assign-review-btn" title="Assign reviewer">
-                                                <i class="fa-solid fa-user-check"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <tr data-submitted-at="2026-09-19T09:15" data-due-at="2026-09-18T17:00">
-                                    <td>Sep 19, 2026 9:15 AM</td>
-                                    <td>Ramon C. Dela Peña</td>
-                                    <td>
-                                        <span class="status academic">
-                                            Academic
-                                        </span>
-                                    </td>
-                                    <td>English</td>
-                                    <td>Grade 11 - ABM A</td>
-                                    <td>Term 1</td>
-                                    <td>Week 3</td>
-                                    <td class="lesson-due-cell">Sep 18, 2026 5:00 PM</td>
-                                    <td>
-                                        <span class="file-chip">
-                                            <i class="fa-solid fa-file-word"></i>
-                                            DLL_English_ShortStory.docx
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="status status-late">
-                                            Late
-                                        </span>
-                                    </td>
-                                    <td class="lesson-action-cell">
-                                        <div class="lesson-actions">
-                                            <button type="button" class="table-btn preview-lesson-btn" title="Preview lesson plan">
-                                                <i class="fa-solid fa-eye"></i>
-                                            </button>
-                                            <select class="reviewer-select" title="Choose who will check this file">
-                                                <option value="admin">Admin Check</option>
-                                                <option value="department-head">Department Head Check</option>
-                                            </select>
-                                            <button type="button" class="table-btn assign-review-btn" title="Assign reviewer">
-                                                <i class="fa-solid fa-user-check"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <tr data-submitted-at="2026-09-15T15:40" data-due-at="2026-09-18T17:00">
-                                    <td>Sep 15, 2026 3:40 PM</td>
-                                    <td>Jerome A. Bautista</td>
-                                    <td>
-                                        <span class="status techpro">
-                                            TechPro
-                                        </span>
-                                    </td>
-                                    <td>Science</td>
-                                    <td>Grade 10 - Rizal</td>
-                                    <td>Term 1</td>
-                                    <td>Week 4</td>
-                                    <td class="lesson-due-cell">Sep 18, 2026 5:00 PM</td>
-                                    <td>
-                                        <span class="file-chip">
-                                            <i class="fa-solid fa-file-pdf"></i>
-                                            DLL_Science_NewtonsLaws.pdf
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="status status-on-time">
-                                            On Time
-                                        </span>
-                                    </td>
-                                    <td class="lesson-action-cell">
-                                        <div class="lesson-actions">
-                                            <button type="button" class="table-btn preview-lesson-btn" title="Preview lesson plan">
-                                                <i class="fa-solid fa-eye"></i>
-                                            </button>
-                                            <select class="reviewer-select" title="Choose who will check this file">
-                                                <option value="admin">Admin Check</option>
-                                                <option value="department-head">Department Head Check</option>
-                                            </select>
-                                            <button type="button" class="table-btn assign-review-btn" title="Assign reviewer">
-                                                <i class="fa-solid fa-user-check"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <tr data-due-at="2026-09-18T17:00">
-                                    <td>—</td>
-                                    <td>Maria L. Santos</td>
-                                    <td>
-                                        <span class="status academic">
-                                            Academic
-                                        </span>
-                                    </td>
-                                    <td>Filipino</td>
-                                    <td>Grade 10 - Bonifacio</td>
-                                    <td>Term 1</td>
-                                    <td>Week 3</td>
-                                    <td class="lesson-due-cell">Sep 18, 2026 5:00 PM</td>
-                                    <td>
-                                        <span class="file-chip">
-                                            <i class="fa-solid fa-file-circle-xmark"></i>
-                                            No file submitted
-                                        </span>
-                                    </td>
-                                    <td class="lesson-status-cell">
-                                        <span class="status status-missing">
-                                            Missing
-                                        </span>
-                                    </td>
-                                    <td class="lesson-action-cell">
-                                        <div class="lesson-actions">
-                                            <button type="button" class="table-btn preview-lesson-btn" title="Preview lesson plan">
-                                                <i class="fa-solid fa-eye"></i>
-                                            </button>
-                                            <select class="reviewer-select" title="Choose who will check this file">
-                                                <option value="admin">Admin Check</option>
-                                                <option value="department-head">Department Head Check</option>
-                                            </select>
-                                            <button type="button" class="table-btn assign-review-btn" title="Assign reviewer">
-                                                <i class="fa-solid fa-user-check"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
+                            <!-- Rows are rendered live from Firestore by renderLessonPlanTable() in script.js -->
 
                             </tbody>
 
@@ -1100,11 +831,8 @@
                 <label>
                     Teacher Name
                     <select id="newLessonTeacher" required>
+                        <!-- Options are rebuilt live from the Teachers roster by populateLessonTeacherOptions() in script.js -->
                         <option value="" disabled selected>Select teacher</option>
-                        <option data-department="Academic">Ana Marie Villanueva</option>
-                        <option data-department="Academic">Ramon C. Dela Peña</option>
-                        <option data-department="TechPro">Jerome A. Bautista</option>
-                        <option data-department="Academic">Maria L. Santos</option>
                     </select>
                 </label>
 
@@ -1437,6 +1165,15 @@
 <!-- Hidden file inputs used to change the profile picture / school logo -->
 <input type="file" id="avatarUploadInput" accept="image/*" style="display:none">
 <input type="file" id="logoUploadInput" accept="image/*" style="display:none">
+
+<!-- Firebase (compat SDK - works with plain <script> tags, no build step) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-storage-compat.js"></script>
+
+<!-- Your project's Firebase keys live here - see FIREBASE_SETUP.txt -->
+<script src="firebase-config.js"></script>
 
 <script src="script.js"></script>
 

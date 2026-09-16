@@ -7,46 +7,178 @@
    LOGIN / AUTHENTICATION
 ================================ */
 
-/* Demo accounts. In a real system these would be
-   verified against the school's database. Teacher
-   accounts see a reduced menu (see ADMIN_ONLY_PAGES)
-   and can only see and upload their own lesson plans
-   (see applyLessonPlanVisibility). The "name" field is
-   what ties a teacher account to their rows in the
-   Lesson Plan table / Teacher Name dropdown. */
-
-const DEMO_ACCOUNTS = [
-    {
-        username: "admin",
-        password: "admin123",
-        role: "admin",
-        name: "Administrator",
-        title: "School Admin",
-        initials: "AD"
-    },
-    {
-        username: "teacher1",
-        password: "teacher123",
-        role: "teacher",
-        name: "Ana Marie Villanueva",
-        title: "Teacher - Grade 11 STEM A",
-        initials: "AV",
-        grade: "Grade 11",
-        section: "STEM A"
-    },
-    {
-        username: "teacher2",
-        password: "teacher123",
-        role: "teacher",
-        name: "Jerome A. Bautista",
-        title: "Teacher - Grade 10 Rizal",
-        initials: "JB",
-        grade: "Grade 10",
-        section: "Rizal"
-    }
-];
+/* Accounts now live in Firebase:
+   - Firebase Authentication holds the email + password.
+   - A matching Firestore document in the "users" collection
+     (doc ID = the account's Auth UID) holds the profile info
+     below: role, name, title, initials, grade, section.
+   See FIREBASE_SETUP.txt for exactly how to create one.
+   Teacher accounts see a reduced menu (see ADMIN_ONLY_PAGES)
+   and can only see and upload their own lesson plans (see
+   applyLessonPlanVisibility). The "name" field is what ties a
+   teacher account to their rows in the Lesson Plan table /
+   Teacher Name dropdown - keep it identical in both places. */
 
 let currentUser = null;
+
+
+/* ================================
+   TEACHERS / LESSON PLANS - FIRESTORE
+   LIVE DATA (replaces the old in-page
+   demo rows so the roster and every
+   submission are saved for real and
+   shared across every device/account).
+================================ */
+
+let teachersCache = [];
+let lessonPlansCache = [];
+let teachersUnsubscribe = null;
+let lessonPlansUnsubscribe = null;
+
+
+function escapeHtml(value) {
+
+    return String(value === null || value === undefined ? "" : value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
+
+
+/* Starts (or restarts) the two live Firestore listeners.
+   Called once a user is signed in. Every other teacher/admin
+   signed in at the same time gets the same updates in real
+   time, which is what makes submissions "shared" instead of
+   living only in one browser's memory. */
+
+function startDataListeners() {
+
+    if (teachersUnsubscribe) teachersUnsubscribe();
+    if (lessonPlansUnsubscribe) lessonPlansUnsubscribe();
+
+    teachersUnsubscribe = db.collection("teachers")
+        .orderBy("name")
+        .onSnapshot(function(snapshot) {
+
+            teachersCache = snapshot.docs.map(function(doc) {
+                return Object.assign({ id: doc.id }, doc.data());
+            });
+
+            renderTeacherTable();
+            populateLessonTeacherOptions();
+            renderTeacherComplianceWidget();
+            renderSubmissionTracker();
+            updateDashboardCounts();
+            updateComplianceDashboard();
+
+        }, function(err) {
+
+            console.error("Could not load the teacher roster:", err);
+
+        });
+
+    lessonPlansUnsubscribe = db.collection("lessonPlans")
+        .orderBy("submittedAt", "desc")
+        .onSnapshot(function(snapshot) {
+
+            lessonPlansCache = snapshot.docs.map(function(doc) {
+                return Object.assign({ id: doc.id }, doc.data());
+            });
+
+            renderLessonPlanTable();
+            renderTeacherComplianceWidget();
+            renderSubmissionTracker();
+            updateDashboardCounts();
+            updateComplianceDashboard();
+
+        }, function(err) {
+
+            console.error("Could not load lesson plan submissions:", err);
+
+        });
+
+}
+
+
+/* Detaches the listeners and clears the local cache on logout,
+   so a signed-out browser doesn't keep watching the collections
+   (Firestore rules would reject it anyway) and the next login
+   starts from a clean slate. */
+
+function stopDataListeners() {
+
+    if (teachersUnsubscribe) teachersUnsubscribe();
+    if (lessonPlansUnsubscribe) lessonPlansUnsubscribe();
+
+    teachersUnsubscribe = null;
+    lessonPlansUnsubscribe = null;
+
+    teachersCache = [];
+    lessonPlansCache = [];
+
+}
+
+
+/* Loads the profile document (role/name/title/initials/...)
+   that matches a signed-in Firebase Auth user, and shapes it
+   into the same "account" object the rest of the app expects. */
+
+async function loadUserProfile(firebaseUser) {
+
+    const doc =
+        await db.collection("users").doc(firebaseUser.uid).get();
+
+    if (!doc.exists) return null;
+
+    const profile = doc.data();
+
+    return {
+        uid: firebaseUser.uid,
+        username: firebaseUser.email,
+        email: firebaseUser.email,
+        role: profile.role,
+        name: profile.name,
+        title: profile.title,
+        initials: profile.initials,
+        grade: profile.grade,
+        section: profile.section,
+        photoURL: profile.photoURL || null
+    };
+
+}
+
+
+/* If the browser still has a signed-in Firebase session
+   (e.g. the page was refreshed), skip straight back into the
+   app instead of showing the login form again. */
+
+let resumedSession = false;
+
+auth.onAuthStateChanged(async function(firebaseUser) {
+
+    if (!firebaseUser || currentUser || resumedSession) return;
+
+    resumedSession = true;
+
+    const account = await loadUserProfile(firebaseUser);
+
+    if (!account) return;
+
+    currentUser = account;
+
+    applyUserRole(account);
+
+    startDataListeners();
+
+    showApp();
+
+    showPage("dashboard");
+
+});
+
 
 const loginPage =
     document.getElementById("loginPage");
@@ -92,6 +224,14 @@ function showLoginPage() {
 
     currentUser = null;
 
+    stopDataListeners();
+
+    if (auth.currentUser) {
+
+        auth.signOut();
+
+    }
+
     if (loginForm) {
 
         loginForm.reset();
@@ -115,10 +255,10 @@ function applyUserRole(account) {
     document.getElementById("topbarUserName").textContent = account.name;
     document.getElementById("topbarUserRole").textContent = account.title;
 
-    /* If this account previously uploaded a profile picture,
+    /* If this account has a profile picture saved in Firebase,
        show it instead of the initials. */
 
-    applyStoredAvatar(account.username, initials);
+    applyAccountAvatar(account);
 
     pageNames.dashboard.subtitle =
         "Welcome back, " + account.name + "!";
@@ -189,8 +329,9 @@ function applyUserRole(account) {
 
 /* ================================
    PROFILE PICTURE & SCHOOL LOGO
-   UPLOAD (stored in localStorage so
-   they persist across reloads)
+   UPLOAD (stored in Firebase Storage
+   and linked from Firestore, so the
+   same picture shows on every device)
 ================================ */
 
 const avatarUploadInput =
@@ -198,13 +339,6 @@ const avatarUploadInput =
 
 const logoUploadInput =
     document.getElementById("logoUploadInput");
-
-
-function avatarStorageKey(username) {
-
-    return "anhs_avatar_" + username;
-
-}
 
 
 function readImageFile(file, callback) {
@@ -218,26 +352,18 @@ function readImageFile(file, callback) {
 
     }
 
-    const reader = new FileReader();
-
-    reader.onload = function(event) {
-
-        callback(event.target.result);
-
-    };
-
-    reader.readAsDataURL(file);
+    callback(file);
 
 }
 
 
-function setAvatarDisplay(el, imageDataUrl, initials) {
+function setAvatarDisplay(el, imageUrl, initials) {
 
     if (!el) return;
 
-    if (imageDataUrl) {
+    if (imageUrl) {
 
-        el.style.backgroundImage = "url(\"" + imageDataUrl + "\")";
+        el.style.backgroundImage = "url(\"" + imageUrl + "\")";
         el.classList.add("has-image");
         el.textContent = "";
 
@@ -252,18 +378,15 @@ function setAvatarDisplay(el, imageDataUrl, initials) {
 }
 
 
-function applyStoredAvatar(username, initials) {
+function applyAccountAvatar(account) {
 
-    const saved =
-        localStorage.getItem(avatarStorageKey(username));
-
-    setAvatarDisplay(document.getElementById("sidebarAvatar"), saved, initials);
-    setAvatarDisplay(document.getElementById("topbarAvatar"), saved, initials);
+    setAvatarDisplay(document.getElementById("sidebarAvatar"), account.photoURL, account.initials);
+    setAvatarDisplay(document.getElementById("topbarAvatar"), account.photoURL, account.initials);
 
 }
 
 
-function setLogoDisplay(imageDataUrl) {
+function setLogoDisplay(imageUrl) {
 
     const logos = [
         document.getElementById("loginBrandLogo"),
@@ -274,9 +397,9 @@ function setLogoDisplay(imageDataUrl) {
 
         if (!el) return;
 
-        if (imageDataUrl) {
+        if (imageUrl) {
 
-            el.style.backgroundImage = "url(\"" + imageDataUrl + "\")";
+            el.style.backgroundImage = "url(\"" + imageUrl + "\")";
             el.classList.add("has-image");
 
         } else {
@@ -291,17 +414,34 @@ function setLogoDisplay(imageDataUrl) {
 }
 
 
-function applyStoredLogo() {
+/* The school logo is shared by everyone, so it's loaded from
+   Firestore as soon as the page opens, even before anyone logs
+   in (the login page shows it too). */
 
-    const saved = localStorage.getItem("anhs_school_logo");
+async function applyStoredLogo() {
 
-    if (saved) setLogoDisplay(saved);
+    try {
+
+        const doc =
+            await db.collection("settings").doc("school").get();
+
+        if (doc.exists && doc.data().logoURL) {
+
+            setLogoDisplay(doc.data().logoURL);
+
+        }
+
+    } catch (err) {
+
+        console.error("Could not load school logo:", err);
+
+    }
 
 }
 
 
 /* Clicking either avatar opens the file picker for a new
-   profile picture, saved per logged-in account. */
+   profile picture, saved for the currently signed-in account. */
 
 ["sidebarAvatar", "topbarAvatar"].forEach(function(id) {
 
@@ -310,6 +450,8 @@ function applyStoredLogo() {
     if (el && avatarUploadInput) {
 
         el.addEventListener("click", function() {
+
+            if (!currentUser) return;
 
             avatarUploadInput.click();
 
@@ -326,26 +468,32 @@ if (avatarUploadInput) {
 
         const file = event.target.files[0];
 
-        readImageFile(file, function(dataUrl) {
+        readImageFile(file, async function(imageFile) {
 
-            if (currentUser) {
+            if (!currentUser) return;
 
-                localStorage.setItem(
-                    avatarStorageKey(currentUser.username),
-                    dataUrl
-                );
+            try {
 
-                setAvatarDisplay(
-                    document.getElementById("sidebarAvatar"),
-                    dataUrl,
-                    currentUser.initials
-                );
+                const fileRef =
+                    storage.ref().child("avatars/" + currentUser.uid);
 
-                setAvatarDisplay(
-                    document.getElementById("topbarAvatar"),
-                    dataUrl,
-                    currentUser.initials
-                );
+                await fileRef.put(imageFile);
+
+                const url = await fileRef.getDownloadURL();
+
+                await db.collection("users").doc(currentUser.uid).update({
+                    photoURL: url
+                });
+
+                currentUser.photoURL = url;
+
+                applyAccountAvatar(currentUser);
+
+            } catch (err) {
+
+                console.error("Could not upload profile picture:", err);
+
+                alert("Sorry, that picture couldn't be uploaded. Please try again.");
 
             }
 
@@ -387,10 +535,31 @@ if (logoUploadInput) {
 
         const file = event.target.files[0];
 
-        readImageFile(file, function(dataUrl) {
+        readImageFile(file, async function(imageFile) {
 
-            localStorage.setItem("anhs_school_logo", dataUrl);
-            setLogoDisplay(dataUrl);
+            try {
+
+                const fileRef =
+                    storage.ref().child("school/logo");
+
+                await fileRef.put(imageFile);
+
+                const url = await fileRef.getDownloadURL();
+
+                await db.collection("settings").doc("school").set(
+                    { logoURL: url },
+                    { merge: true }
+                );
+
+                setLogoDisplay(url);
+
+            } catch (err) {
+
+                console.error("Could not upload school logo:", err);
+
+                alert("Sorry, that logo couldn't be uploaded. Please try again.");
+
+            }
 
         });
 
@@ -430,12 +599,12 @@ if (loginForm) {
 
     loginForm.addEventListener(
         "submit",
-        function(event) {
+        async function(event) {
 
             event.preventDefault();
 
 
-            const username =
+            const email =
                 document.getElementById(
                     "loginUsername"
                 ).value.trim();
@@ -444,30 +613,44 @@ if (loginForm) {
                 loginPasswordInput.value;
 
 
-            const account =
-                DEMO_ACCOUNTS.find(function(acc) {
-
-                    return (
-                        acc.username === username &&
-                        acc.password === password
-                    );
-
-                });
+            loginError.classList.remove("show");
 
 
-            if (account) {
+            try {
 
-                loginError.classList.remove("show");
+                const credential =
+                    await auth.signInWithEmailAndPassword(email, password);
+
+                const account =
+                    await loadUserProfile(credential.user);
+
+                if (!account) {
+
+                    loginError.textContent =
+                        "No profile found for this account. Ask your admin to finish setting it up in Firestore.";
+
+                    loginError.classList.add("show");
+
+                    await auth.signOut();
+
+                    return;
+
+                }
 
                 currentUser = account;
 
                 applyUserRole(account);
 
+                startDataListeners();
+
                 showApp();
 
                 showPage("dashboard");
 
-            } else {
+            } catch (err) {
+
+                loginError.textContent =
+                    "Invalid email or password.";
 
                 loginError.classList.add("show");
 
@@ -1324,25 +1507,11 @@ function formatDueDate(dateTimeValue) {
 
 function normalizeLessonPlanStatuses() {
 
-    document.querySelectorAll("#lessonPlanTable tbody tr").forEach(row => {
-
-        const submittedAt = row.dataset.submittedAt || "";
-        const dueAt = row.dataset.dueAt || "";
-        const fileCell = row.querySelector(".file-chip");
-        const hasFile = !!fileCell;
-        const status = getLessonPlanStatus(submittedAt, dueAt, hasFile);
-        const statusCell = row.querySelector(".lesson-status-cell") || row.querySelector("td:nth-last-child(2)");
-
-        if (statusCell) {
-            statusCell.innerHTML = `<span class="status ${getStatusClass(status)}">${status}</span>`;
-        }
-
-        const dueCell = row.querySelector(".lesson-due-cell");
-        if (dueCell && dueAt) {
-            dueCell.textContent = formatDueDate(dueAt);
-        }
-
-    });
+    /* Status/due-date cells are now computed live off the
+       Firestore-backed cache every time the table renders, so
+       refreshing after a deadline-settings change is just a
+       re-render rather than patching cells in place. */
+    renderLessonPlanTable();
 
 }
 
@@ -1359,7 +1528,7 @@ if (lessonPlanForm) {
 
     lessonPlanForm.addEventListener(
         "submit",
-        function(event) {
+        async function(event) {
 
             event.preventDefault();
 
@@ -1478,99 +1647,78 @@ if (lessonPlanForm) {
 
             const submittedAt = new Date().toISOString();
             const dueAt = rawDueDate;
-            const status = getLessonPlanStatus(submittedAt, dueAt, !!file);
 
 
-            const tbody =
-                document.querySelector(
-                    "#lessonPlanTable tbody"
+            /* Upload the actual file to Firebase Storage (same
+               pattern already used for avatars/the school logo)
+               so it's saved for real and can be opened from any
+               device, then save the submission record — with a
+               link to that file — in Firestore so every signed-in
+               account sees it immediately. */
+
+            const submitBtn =
+                lessonPlanForm.querySelector('button[type="submit"]');
+
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.dataset.originalText = submitBtn.textContent;
+                submitBtn.textContent = "Uploading...";
+            }
+
+            try {
+
+                const storagePath =
+                    "lessonPlans/" + Date.now() + "_" + file.name;
+
+                const fileRef =
+                    storage.ref().child(storagePath);
+
+                await fileRef.put(file);
+
+                const fileURL =
+                    await fileRef.getDownloadURL();
+
+                await db.collection("lessonPlans").add({
+                    teacher: teacher,
+                    department: department,
+                    subject: subject,
+                    sections: sections,
+                    sectionText: sectionText,
+                    term: term,
+                    week: week,
+                    submittedAt: submittedAt,
+                    dueAt: dueAt,
+                    fileName: file.name,
+                    fileIcon: fileIcon,
+                    fileURL: fileURL,
+                    storagePath: storagePath,
+                    reviewer: "admin",
+                    createdBy: currentUser ? currentUser.uid : null,
+                    createdAt: submittedAt
+                });
+
+                hideLessonPlanModal();
+
+                alert(
+                    "Lesson plan successfully saved to ANHS SmartSchool."
                 );
 
+            } catch (err) {
 
-            const row =
-                document.createElement("tr");
+                console.error("Could not save the lesson plan:", err);
 
+                alert(
+                    "Sorry, that lesson plan couldn't be uploaded. Please check your connection and try again."
+                );
 
-            const departmentClass =
-                department === "TechPro"
-                    ? "techpro"
-                    : "academic";
+            } finally {
 
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = submitBtn.dataset.originalText || "Save Lesson Plan";
+                }
 
-            row.dataset.submittedAt = submittedAt;
-            row.dataset.dueAt = dueAt;
-            row.dataset.fileName = file.name;
-            row.dataset.fileUrl = URL.createObjectURL(file);
-            row.dataset.reviewer = "admin";
-
-            row.innerHTML = `
-
-                <td>${new Date(submittedAt).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}</td>
-
-                <td>${teacher}</td>
-
-                <td>
-                    <span class="status ${departmentClass}">
-                        ${department}
-                    </span>
-                </td>
-
-                <td>${subject}</td>
-
-                <td>${sectionText}</td>
-
-                <td>${term}</td>
-
-                <td>${week}</td>
-
-                <td class="lesson-due-cell">${formatDueDate(dueAt)}</td>
-
-                <td>
-                    <span class="file-chip">
-                        <i class="fa-solid ${fileIcon}"></i>
-                        ${file.name}
-                    </span>
-                </td>
-
-                <td class="lesson-status-cell">
-                    <span class="status ${getStatusClass(status)}">
-                        ${status}
-                    </span>
-                </td>
-
-                <td class="lesson-action-cell">
-                    <div class="lesson-actions">
-                        <button type="button" class="table-btn preview-lesson-btn" title="Preview lesson plan">
-                            <i class="fa-solid fa-eye"></i>
-                        </button>
-                        <select class="reviewer-select" title="Choose who will check this file">
-                            <option value="admin">Admin Check</option>
-                            <option value="department-head">Department Head Check</option>
-                        </select>
-                        <button type="button" class="table-btn assign-review-btn" title="Assign reviewer">
-                            <i class="fa-solid fa-user-check"></i>
-                        </button>
-                    </div>
-                </td>
-
-            `;
-
-
-            tbody.appendChild(row);
-
-            applyLessonPlanVisibility();
-            renderTeacherComplianceWidget();
-
-            updateDashboardCounts();
-        updateComplianceDashboard();
-
-
-            hideLessonPlanModal();
-
-
-            alert(
-                "Lesson plan successfully saved to ANHS SmartSchool."
-            );
+            }
 
         }
     );
@@ -1736,7 +1884,7 @@ if (teacherForm) {
 
     teacherForm.addEventListener(
         "submit",
-        function(event) {
+        async function(event) {
 
             event.preventDefault();
 
@@ -1744,7 +1892,7 @@ if (teacherForm) {
             const name =
                 document.getElementById(
                     "newTeacherName"
-                ).value;
+                ).value.trim();
 
             const sex =
                 document.getElementById(
@@ -1764,7 +1912,7 @@ if (teacherForm) {
             const position =
                 document.getElementById(
                     "newTeacherPosition"
-                ).value;
+                ).value.trim();
 
             const years =
                 document.getElementById(
@@ -1776,103 +1924,96 @@ if (teacherForm) {
                     "newTeacherPostGrad"
                 ).value;
 
-
-            const departmentClass =
-                department === "TechPro"
-                    ? "techpro"
-                    : "academic";
+            if (!name) return;
 
 
-            const tbody =
-                document.querySelector(
-                    "#teacherTable tbody"
+            /* Saved straight to Firestore's "teachers" collection
+               instead of just being appended to the table in
+               memory, so the roster is shared with every signed-in
+               account and survives a refresh. */
+
+            const submitBtn =
+                teacherForm.querySelector('button[type="submit"]');
+
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.dataset.originalText = submitBtn.textContent;
+                submitBtn.textContent = "Saving...";
+            }
+
+            try {
+
+                await db.collection("teachers").add({
+                    name: name,
+                    sex: sex,
+                    age: age,
+                    department: department,
+                    position: position,
+                    years: years,
+                    postGrad: postGrad,
+                    createdBy: currentUser ? currentUser.uid : null,
+                    createdAt: new Date().toISOString()
+                });
+
+                teacherForm.reset();
+                hideTeacherModal();
+
+                alert(
+                    "Teacher successfully added to ANHS SmartSchool."
                 );
 
+            } catch (err) {
 
-            const row =
-                document.createElement("tr");
+                console.error("Could not add teacher:", err);
 
-            row.dataset.department = department;
-
-
-            row.innerHTML = `
-
-                <td>${name}</td>
-
-                <td>${sex}</td>
-
-                <td>${age}</td>
-
-                <td>
-                    <span class="status ${departmentClass}">
-                        ${department}
-                    </span>
-                </td>
-
-                <td>${position}</td>
-
-                <td>${years}</td>
-
-                <td>${postGrad}</td>
-
-                <td class="lesson-action-cell">
-                    <div class="lesson-actions">
-                        <button type="button" class="table-btn preview-lesson-btn" title="Preview lesson plan">
-                            <i class="fa-solid fa-eye"></i>
-                        </button>
-                        <select class="reviewer-select" title="Choose who will check this file">
-                            <option value="admin">Admin Check</option>
-                            <option value="department-head">Department Head Check</option>
-                        </select>
-                        <button type="button" class="table-btn assign-review-btn" title="Assign reviewer">
-                            <i class="fa-solid fa-user-check"></i>
-                        </button>
-                    </div>
-                </td>
-
-            `;
-
-
-            tbody.appendChild(row);
-
-
-            /* Update teacher count on dashboard */
-
-            const teacherCountElement =
-                document.getElementById(
-                    "teacherCount"
+                alert(
+                    "Sorry, that teacher couldn't be saved. Please try again."
                 );
 
-            if (teacherCountElement) {
+            } finally {
 
-                let currentTeacherCount =
-                    parseInt(
-                        teacherCountElement.textContent.replace(
-                            ",",
-                            ""
-                        )
-                    );
-
-                currentTeacherCount++;
-
-                teacherCountElement.textContent =
-                    currentTeacherCount.toLocaleString();
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = submitBtn.dataset.originalText || "Save Teacher";
+                }
 
             }
 
-
-            teacherForm.reset();
-            hideTeacherModal();
-
-            renderTeacherComplianceWidget();
-
-
-            alert(
-                "Teacher successfully added to ANHS SmartSchool."
-            );
-
         }
     );
+
+}
+
+
+/* ================================
+   DELETE TEACHER (roster only — does
+   not touch their login account or
+   any lesson plans they've already
+   submitted)
+================================ */
+
+async function deleteTeacherRecord(teacherId, teacherName) {
+
+    if (!currentUser || currentUser.role !== "admin") return;
+
+    const confirmed = confirm(
+        `Remove ${teacherName || "this teacher"} from the roster? ` +
+        "This does not delete their login account or past lesson plan submissions."
+    );
+
+    if (!confirmed) return;
+
+    try {
+
+        await db.collection("teachers").doc(teacherId).delete();
+
+    } catch (err) {
+
+        console.error("Could not remove teacher:", err);
+
+        alert("Sorry, that teacher couldn't be removed. Please try again.");
+
+    }
 
 }
 
@@ -1944,20 +2085,56 @@ function closeLessonPreview() {
     activeLessonRow = null;
 }
 
+/* Persists a reviewer assignment to the lesson plan's Firestore
+   doc. The live listener (startDataListeners) then re-renders the
+   table for every signed-in account, so the assignment is shared
+   immediately instead of only living in one browser's row. */
+
+async function updateLessonPlanReviewer(planId, reviewer) {
+
+    try {
+
+        await db.collection("lessonPlans").doc(planId).update({
+            reviewer: reviewer
+        });
+
+        alert(`File assigned to ${reviewerLabel(reviewer)} for checking.`);
+
+    } catch (err) {
+
+        console.error("Could not update the reviewer assignment:", err);
+
+        alert("Sorry, that assignment couldn't be saved. Please try again.");
+
+    }
+
+}
+
 document.addEventListener("click", function(event) {
     const previewButton = event.target.closest(".preview-lesson-btn");
     const assignButton = event.target.closest(".assign-review-btn");
+    const deleteTeacherButton = event.target.closest(".delete-teacher-btn");
+
     if (previewButton) {
         openLessonPreview(previewButton.closest("tr"));
         return;
     }
+
     if (assignButton) {
         if (currentUser && currentUser.role === "teacher") return;
         const row = assignButton.closest("tr");
         const select = row?.querySelector(".reviewer-select");
-        if (row && select) {
-            row.dataset.reviewer = select.value;
-            alert(`File assigned to ${reviewerLabel(select.value)} for checking.`);
+        if (row && select && row.dataset.id) {
+            updateLessonPlanReviewer(row.dataset.id, select.value);
+        }
+        return;
+    }
+
+    if (deleteTeacherButton) {
+        const row = deleteTeacherButton.closest("tr");
+        if (row && row.dataset.id) {
+            const name = row.querySelector("td")?.textContent.trim();
+            deleteTeacherRecord(row.dataset.id, name);
         }
     }
 });
@@ -1966,7 +2143,9 @@ document.addEventListener("change", function(event) {
     if (!event.target.matches(".reviewer-select")) return;
     if (currentUser && currentUser.role === "teacher") return;
     const row = event.target.closest("tr");
-    if (row) row.dataset.reviewer = event.target.value;
+    if (row && row.dataset.id) {
+        updateLessonPlanReviewer(row.dataset.id, event.target.value);
+    }
 });
 
 closeLessonPreviewModal?.addEventListener("click", closeLessonPreview);
@@ -1974,15 +2153,12 @@ closePreviewBtn?.addEventListener("click", closeLessonPreview);
 lessonPreviewModal?.addEventListener("click", function(event) {
     if (event.target === lessonPreviewModal) closeLessonPreview();
 });
-saveReviewerBtn?.addEventListener("click", function() {
-    if (!activeLessonRow) return;
+saveReviewerBtn?.addEventListener("click", async function() {
+    if (!activeLessonRow || !activeLessonRow.dataset.id) return;
     if (currentUser && currentUser.role === "teacher") return;
     const reviewer = previewReviewerSelect.value;
-    activeLessonRow.dataset.reviewer = reviewer;
-    const rowSelect = activeLessonRow.querySelector(".reviewer-select");
-    if (rowSelect) rowSelect.value = reviewer;
+    await updateLessonPlanReviewer(activeLessonRow.dataset.id, reviewer);
     document.getElementById("previewReviewer").textContent = reviewerLabel(reviewer);
-    alert(`File assigned to ${reviewerLabel(reviewer)} for checking.`);
 });
 
 
@@ -2052,28 +2228,182 @@ function getTrackerWeekOffset() {
     return value === "previous" ? -1 : 0;
 }
 
+/* Teacher roster and lesson-plan records now come straight from
+   the live Firestore caches (see startDataListeners) instead of
+   being scraped back out of the HTML table — the table is just a
+   rendered view of this data now. */
+
 function getTeacherRecords() {
-    return Array.from(document.querySelectorAll("#teacherTable tbody tr")).map(row => {
-        const cells = row.querySelectorAll("td");
-        return {
-            name: cells[0]?.textContent.trim() || "Unknown Teacher",
-            department: row.dataset.department || cells[3]?.textContent.trim() || "Academic"
-        };
-    });
+    return teachersCache.map(teacher => ({
+        name: teacher.name || "Unknown Teacher",
+        department: teacher.department || "Academic"
+    }));
 }
 
 function getLessonPlanRecords() {
-    return Array.from(document.querySelectorAll("#lessonPlanTable tbody tr")).map(row => {
-        const cells = row.querySelectorAll("td");
-        return {
-            submittedAt: row.dataset.submittedAt || "",
-            dueAt: row.dataset.dueAt || "",
-            teacher: cells[1]?.textContent.trim() || "",
-            term: cells[5]?.textContent.trim() || "",
-            week: cells[6]?.textContent.trim() || "",
-            hasFile: !!row.querySelector(".file-chip")
-        };
-    });
+    return lessonPlansCache.map(plan => ({
+        submittedAt: plan.submittedAt || "",
+        dueAt: plan.dueAt || "",
+        teacher: plan.teacher || "",
+        term: plan.term || "",
+        week: plan.week || "",
+        hasFile: !!plan.fileURL
+    }));
+}
+
+
+/* ================================
+   RENDER: TEACHERS TABLE
+================================ */
+
+function renderTeacherTable() {
+
+    const tbody = document.querySelector("#teacherTable tbody");
+    if (!tbody) return;
+
+    const isAdmin = !!currentUser && currentUser.role === "admin";
+
+    if (!teachersCache.length) {
+
+        tbody.innerHTML = `<tr><td colspan="8" class="tracker-no-results">
+            <i class="fa-solid fa-user-slash"></i>
+            No teachers in the roster yet. Use "Add Teacher" to add one.
+        </td></tr>`;
+
+    } else {
+
+        tbody.innerHTML = teachersCache.map(function(teacher) {
+
+            const department = teacher.department || "Academic";
+            const departmentClass = department === "TechPro" ? "techpro" : "academic";
+
+            return `<tr data-department="${escapeHtml(department)}" data-id="${teacher.id}">
+                <td>${escapeHtml(teacher.name)}</td>
+                <td>${escapeHtml(teacher.sex || "—")}</td>
+                <td>${escapeHtml(teacher.age || "—")}</td>
+                <td><span class="status ${departmentClass}">${escapeHtml(department)}</span></td>
+                <td>${escapeHtml(teacher.position || "—")}</td>
+                <td>${escapeHtml(teacher.years || "—")}</td>
+                <td>${escapeHtml(teacher.postGrad || "—")}</td>
+                <td class="lesson-action-cell">
+                    <div class="lesson-actions">
+                        <button type="button" class="table-btn delete-teacher-btn" title="Remove teacher" ${isAdmin ? "" : "disabled"}>
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>`;
+
+        }).join("");
+
+    }
+
+    filterTeacherTable();
+
+}
+
+
+/* ================================
+   RENDER: LESSON PLAN / DLL TABLE
+================================ */
+
+function renderLessonPlanTable() {
+
+    const tbody = document.querySelector("#lessonPlanTable tbody");
+    if (!tbody) return;
+
+    if (!lessonPlansCache.length) {
+
+        tbody.innerHTML = `<tr><td colspan="11" class="tracker-no-results">
+            <i class="fa-solid fa-file-circle-xmark"></i>
+            No lesson plans submitted yet.
+        </td></tr>`;
+
+    } else {
+
+        tbody.innerHTML = lessonPlansCache.map(function(plan) {
+
+            const status = getLessonPlanStatus(plan.submittedAt, plan.dueAt, !!plan.fileURL);
+            const department = plan.department || "Academic";
+            const departmentClass = department === "TechPro" ? "techpro" : "academic";
+            const reviewer = plan.reviewer || "admin";
+
+            const fileCellHtml = plan.fileURL
+                ? `<span class="file-chip"><i class="fa-solid ${plan.fileIcon || "fa-file-lines"}"></i> ${escapeHtml(plan.fileName || "File")}</span>`
+                : `<span class="file-chip"><i class="fa-solid fa-file-circle-xmark"></i> No file submitted</span>`;
+
+            return `<tr
+                data-id="${plan.id}"
+                data-submitted-at="${plan.submittedAt || ""}"
+                data-due-at="${plan.dueAt || ""}"
+                data-reviewer="${reviewer}"
+                data-file-name="${escapeHtml(plan.fileName || "")}"
+                data-file-url="${plan.fileURL || ""}"
+            >
+                <td>${plan.submittedAt ? formatDueDate(plan.submittedAt) : "—"}</td>
+                <td>${escapeHtml(plan.teacher || "")}</td>
+                <td><span class="status ${departmentClass}">${escapeHtml(department)}</span></td>
+                <td>${escapeHtml(plan.subject || "")}</td>
+                <td>${escapeHtml(plan.sectionText || "")}</td>
+                <td>${escapeHtml(plan.term || "")}</td>
+                <td>${escapeHtml(plan.week || "")}</td>
+                <td class="lesson-due-cell">${plan.dueAt ? formatDueDate(plan.dueAt) : "—"}</td>
+                <td>${fileCellHtml}</td>
+                <td class="lesson-status-cell"><span class="status ${getStatusClass(status)}">${status}</span></td>
+                <td class="lesson-action-cell">
+                    <div class="lesson-actions">
+                        <button type="button" class="table-btn preview-lesson-btn" title="Preview lesson plan">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                        <select class="reviewer-select" title="Choose who will check this file">
+                            <option value="admin">Admin Check</option>
+                            <option value="department-head">Department Head Check</option>
+                        </select>
+                        <button type="button" class="table-btn assign-review-btn" title="Assign reviewer">
+                            <i class="fa-solid fa-user-check"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>`;
+
+        }).join("");
+
+        tbody.querySelectorAll("tr[data-id]").forEach(function(row) {
+            const select = row.querySelector(".reviewer-select");
+            if (select) select.value = row.dataset.reviewer || "admin";
+        });
+
+    }
+
+    applyLessonPlanVisibility();
+
+    if (lessonPlanSearch && lessonPlanSearch.value) {
+        lessonPlanSearch.dispatchEvent(new Event("input"));
+    }
+
+}
+
+
+/* Keeps the "Teacher Name" dropdown on the Add Lesson Plan form
+   in sync with the live roster, instead of a hardcoded list of
+   demo names. */
+
+function populateLessonTeacherOptions() {
+
+    if (!newLessonTeacher) return;
+
+    const previousValue = newLessonTeacher.value;
+
+    newLessonTeacher.innerHTML =
+        '<option value="" disabled selected>Select teacher</option>' +
+        teachersCache.map(function(teacher) {
+            return `<option data-department="${escapeHtml(teacher.department || "")}">${escapeHtml(teacher.name)}</option>`;
+        }).join("");
+
+    if (teachersCache.some(t => t.name === previousValue)) {
+        newLessonTeacher.value = previousValue;
+    }
+
 }
 
 function statusPriority(status) {
@@ -2227,19 +2557,11 @@ showPage = function(pageName) {
 
 /* ================================
    WEEKLY COMPLIANCE DASHBOARD
+   (now computed live from the same
+   Firestore-backed teacher/lesson-plan
+   caches that power the Submission
+   Tracker, instead of hardcoded numbers)
 ================================ */
-
-const WEEKLY_COMPLIANCE = {
-    onTime: 62,
-    late: 14,
-    missing: 10
-};
-
-const DEPARTMENT_COMPLIANCE = [
-    { name: "Academic", rate: 76 },
-    { name: "TechPro", rate: 68 },
-    { name: "All Departments", rate: 72 }
-];
 
 function getCurrentWeekLabel() {
     const today = new Date();
@@ -2253,9 +2575,21 @@ function getCurrentWeekLabel() {
     return `${monday.toLocaleDateString(undefined, options)} - ${sunday.toLocaleDateString(undefined, options)}`;
 }
 
+function computeWeekComplianceCounts(teacherList) {
+    let counts = { "On Time": 0, "Late": 0, "Missing": 0 };
+    teacherList.forEach(function(teacher) {
+        const compliance = getTeacherWeekCompliance(teacher.name, 0, "all");
+        counts[compliance.status]++;
+    });
+    return counts;
+}
+
 function updateComplianceDashboard() {
-    const total = WEEKLY_COMPLIANCE.onTime + WEEKLY_COMPLIANCE.late + WEEKLY_COMPLIANCE.missing;
-    const rate = total ? Math.round((WEEKLY_COMPLIANCE.onTime / total) * 100) : 0;
+
+    const allTeachers = getTeacherRecords();
+    const counts = computeWeekComplianceCounts(allTeachers);
+    const total = counts["On Time"] + counts["Late"] + counts["Missing"];
+    const rate = total ? Math.round((counts["On Time"] / total) * 100) : 0;
 
     const onTime = document.getElementById("onTimeCount");
     const late = document.getElementById("lateCount");
@@ -2264,14 +2598,30 @@ function updateComplianceDashboard() {
     const weekLabel = document.getElementById("complianceWeekLabel");
     const list = document.getElementById("departmentComplianceList");
 
-    if (onTime) onTime.textContent = WEEKLY_COMPLIANCE.onTime;
-    if (late) late.textContent = WEEKLY_COMPLIANCE.late;
-    if (missing) missing.textContent = WEEKLY_COMPLIANCE.missing;
+    if (onTime) onTime.textContent = counts["On Time"];
+    if (late) late.textContent = counts["Late"];
+    if (missing) missing.textContent = counts["Missing"];
     if (overall) overall.textContent = `${rate}%`;
     if (weekLabel) weekLabel.textContent = `Current week • ${getCurrentWeekLabel()}`;
 
     if (list) {
-        list.innerHTML = DEPARTMENT_COMPLIANCE.map(dept => `
+
+        const departmentNames = ["Academic", "TechPro"];
+
+        const departmentRates = departmentNames.map(function(deptName) {
+
+            const deptTeachers = allTeachers.filter(t => t.department === deptName);
+            const deptCounts = computeWeekComplianceCounts(deptTeachers);
+            const deptTotal = deptTeachers.length;
+            const deptRate = deptTotal ? Math.round((deptCounts["On Time"] / deptTotal) * 100) : 0;
+
+            return { name: deptName, rate: deptRate };
+
+        });
+
+        departmentRates.push({ name: "All Departments", rate: rate });
+
+        list.innerHTML = departmentRates.map(dept => `
             <div class="department-row">
                 <span>${dept.name}</span>
                 <div class="compliance-bar" aria-label="${dept.name} compliance ${dept.rate}%">
@@ -2280,7 +2630,9 @@ function updateComplianceDashboard() {
                 <strong>${dept.rate}%</strong>
             </div>
         `).join("");
+
     }
+
 }
 
 /* ================================
@@ -2294,38 +2646,27 @@ function updateDashboardCounts() {
     const isTeacher =
         !!currentUser && currentUser.role === "teacher";
 
-    const lessonRows =
-        Array.from(document.querySelectorAll("#lessonPlanTable tbody tr"))
-            .filter(function(row) {
-
-                if (!isTeacher) return true;
-
-                const teacherName =
-                    row.querySelectorAll("td")[1]?.textContent.trim() || "";
-
-                return teacherName === currentUser.name;
-
-            });
+    const relevantPlans =
+        isTeacher
+            ? lessonPlansCache.filter(plan => plan.teacher === currentUser.name)
+            : lessonPlansCache;
 
     const lessonCount =
         document.getElementById("lessonPlanCount");
 
     if (lessonCount) {
 
-        lessonCount.textContent = lessonRows.length;
+        lessonCount.textContent = relevantPlans.length;
 
     }
 
-
-    const teacherRows =
-        document.querySelectorAll("#teacherTable tbody tr");
 
     const teacherCount =
         document.getElementById("teacherCount");
 
     if (teacherCount) {
 
-        teacherCount.textContent = teacherRows.length;
+        teacherCount.textContent = teachersCache.length;
 
     }
 
