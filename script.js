@@ -115,6 +115,11 @@ function applyUserRole(account) {
     document.getElementById("topbarUserName").textContent = account.name;
     document.getElementById("topbarUserRole").textContent = account.title;
 
+    /* If this account previously uploaded a profile picture,
+       show it instead of the initials. */
+
+    applyStoredAvatar(account.username, initials);
+
     pageNames.dashboard.subtitle =
         "Welcome back, " + account.name + "!";
 
@@ -180,6 +185,223 @@ function applyUserRole(account) {
     updateDashboardCounts();
 
 }
+
+
+/* ================================
+   PROFILE PICTURE & SCHOOL LOGO
+   UPLOAD (stored in localStorage so
+   they persist across reloads)
+================================ */
+
+const avatarUploadInput =
+    document.getElementById("avatarUploadInput");
+
+const logoUploadInput =
+    document.getElementById("logoUploadInput");
+
+
+function avatarStorageKey(username) {
+
+    return "anhs_avatar_" + username;
+
+}
+
+
+function readImageFile(file, callback) {
+
+    if (!file) return;
+
+    if (!file.type || !file.type.startsWith("image/")) {
+
+        alert("Please choose an image file.");
+        return;
+
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = function(event) {
+
+        callback(event.target.result);
+
+    };
+
+    reader.readAsDataURL(file);
+
+}
+
+
+function setAvatarDisplay(el, imageDataUrl, initials) {
+
+    if (!el) return;
+
+    if (imageDataUrl) {
+
+        el.style.backgroundImage = "url(\"" + imageDataUrl + "\")";
+        el.classList.add("has-image");
+        el.textContent = "";
+
+    } else {
+
+        el.style.backgroundImage = "";
+        el.classList.remove("has-image");
+        el.textContent = initials || "";
+
+    }
+
+}
+
+
+function applyStoredAvatar(username, initials) {
+
+    const saved =
+        localStorage.getItem(avatarStorageKey(username));
+
+    setAvatarDisplay(document.getElementById("sidebarAvatar"), saved, initials);
+    setAvatarDisplay(document.getElementById("topbarAvatar"), saved, initials);
+
+}
+
+
+function setLogoDisplay(imageDataUrl) {
+
+    const logos = [
+        document.getElementById("loginBrandLogo"),
+        document.getElementById("sidebarBrandLogo")
+    ];
+
+    logos.forEach(function(el) {
+
+        if (!el) return;
+
+        if (imageDataUrl) {
+
+            el.style.backgroundImage = "url(\"" + imageDataUrl + "\")";
+            el.classList.add("has-image");
+
+        } else {
+
+            el.style.backgroundImage = "";
+            el.classList.remove("has-image");
+
+        }
+
+    });
+
+}
+
+
+function applyStoredLogo() {
+
+    const saved = localStorage.getItem("anhs_school_logo");
+
+    if (saved) setLogoDisplay(saved);
+
+}
+
+
+/* Clicking either avatar opens the file picker for a new
+   profile picture, saved per logged-in account. */
+
+["sidebarAvatar", "topbarAvatar"].forEach(function(id) {
+
+    const el = document.getElementById(id);
+
+    if (el && avatarUploadInput) {
+
+        el.addEventListener("click", function() {
+
+            avatarUploadInput.click();
+
+        });
+
+    }
+
+});
+
+
+if (avatarUploadInput) {
+
+    avatarUploadInput.addEventListener("change", function(event) {
+
+        const file = event.target.files[0];
+
+        readImageFile(file, function(dataUrl) {
+
+            if (currentUser) {
+
+                localStorage.setItem(
+                    avatarStorageKey(currentUser.username),
+                    dataUrl
+                );
+
+                setAvatarDisplay(
+                    document.getElementById("sidebarAvatar"),
+                    dataUrl,
+                    currentUser.initials
+                );
+
+                setAvatarDisplay(
+                    document.getElementById("topbarAvatar"),
+                    dataUrl,
+                    currentUser.initials
+                );
+
+            }
+
+        });
+
+        avatarUploadInput.value = "";
+
+    });
+
+}
+
+
+/* Clicking the ANHS SmartSchool icon (login page or sidebar)
+   opens the file picker for a new school logo, shared by
+   every account. */
+
+["loginBrandLogo", "sidebarBrandLogo"].forEach(function(id) {
+
+    const el = document.getElementById(id);
+
+    if (el && logoUploadInput) {
+
+        el.classList.add("editable-logo");
+
+        el.addEventListener("click", function() {
+
+            logoUploadInput.click();
+
+        });
+
+    }
+
+});
+
+
+if (logoUploadInput) {
+
+    logoUploadInput.addEventListener("change", function(event) {
+
+        const file = event.target.files[0];
+
+        readImageFile(file, function(dataUrl) {
+
+            localStorage.setItem("anhs_school_logo", dataUrl);
+            setLogoDisplay(dataUrl);
+
+        });
+
+        logoUploadInput.value = "";
+
+    });
+
+}
+
+
+applyStoredLogo();
 
 
 if (togglePassword) {

@@ -24,7 +24,7 @@
 
         <div class="login-brand">
 
-            <div class="brand-logo">
+            <div class="brand-logo" id="loginBrandLogo" title="Click to change school logo">
                 <i class="fa-solid fa-school"></i>
             </div>
 
@@ -109,7 +109,7 @@
     <aside class="sidebar" id="sidebar">
 
         <div class="brand">
-            <div class="brand-logo">
+            <div class="brand-logo" id="sidebarBrandLogo" title="Click to change school logo">
                 <i class="fa-solid fa-school"></i>
             </div>
 
@@ -157,7 +157,7 @@
         </nav>
 
         <div class="sidebar-footer">
-            <div class="user-avatar" id="sidebarAvatar">AD</div>
+            <div class="user-avatar" id="sidebarAvatar" title="Click to change profile picture">AD</div>
 
             <div class="user-info">
                 <strong id="sidebarUserName">Administrator</strong>
@@ -198,7 +198,7 @@
 
                 <div class="profile">
 
-                    <div class="profile-avatar" id="topbarAvatar">
+                    <div class="profile-avatar" id="topbarAvatar" title="Click to change profile picture">
                         AD
                     </div>
 
@@ -206,8 +206,6 @@
                         <strong id="topbarUserName">Administrator</strong>
                         <span id="topbarUserRole">School Admin</span>
                     </div>
-
-                    <i class="fa-solid fa-chevron-down"></i>
 
                 </div>
 
@@ -1436,6 +1434,9 @@
 
 </div>
 
+<!-- Hidden file inputs used to change the profile picture / school logo -->
+<input type="file" id="avatarUploadInput" accept="image/*" style="display:none">
+<input type="file" id="logoUploadInput" accept="image/*" style="display:none">
 
 <script src="script.js"></script>
 
