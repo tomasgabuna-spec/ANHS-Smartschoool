@@ -93,8 +93,7 @@
 
             <p class="login-hint">
                 Admin: <strong>admin</strong> / <strong>admin123</strong><br>
-                Department Head: <strong>depthead</strong> / <strong>depthead123</strong><br>
-                Teacher: <strong>adviser1</strong> / <strong>adviser123</strong>
+                Teacher: <strong>teacher1</strong> / <strong>teacher123</strong>
             </p>
 
         </form>
@@ -388,6 +387,47 @@
                 </div>
 
 
+                <!-- WEEKLY COMPLIANCE SNAPSHOT (row-per-teacher, includes non-submitters) -->
+                <div class="card submission-tracker-card teacher-compliance-widget">
+
+                    <div class="card-header tracker-header">
+                        <div>
+                            <h3>Weekly Compliance Snapshot</h3>
+                            <p id="teacherWidgetWeekLabel">Who's on time this week</p>
+                        </div>
+                        <button type="button" class="outline-btn" data-page="submissiontracker">
+                            <i class="fa-solid fa-list-check"></i>
+                            Open Submission Tracker
+                        </button>
+                    </div>
+
+                    <div class="tracker-summary-grid">
+                        <div class="tracker-summary-card total">
+                            <div class="tracker-summary-icon"><i class="fa-solid fa-users"></i></div>
+                            <div><span>Total Teachers</span><strong id="teacherWidgetTotal">0</strong></div>
+                        </div>
+                        <div class="tracker-summary-card on-time">
+                            <div class="tracker-summary-icon"><i class="fa-solid fa-circle-check"></i></div>
+                            <div><span>On Time</span><strong id="teacherWidgetOnTime">0</strong></div>
+                        </div>
+                        <div class="tracker-summary-card late">
+                            <div class="tracker-summary-icon"><i class="fa-solid fa-clock"></i></div>
+                            <div><span>Late</span><strong id="teacherWidgetLate">0</strong></div>
+                        </div>
+                        <div class="tracker-summary-card missing">
+                            <div class="tracker-summary-icon"><i class="fa-solid fa-circle-xmark"></i></div>
+                            <div><span>Missing</span><strong id="teacherWidgetMissing">0</strong></div>
+                        </div>
+                    </div>
+
+                    <p class="tracker-widget-note">
+                        <i class="fa-solid fa-circle-info"></i>
+                        One row per teacher — a teacher who hasn't submitted still counts as <b>Missing</b>, they're never just left out.
+                    </p>
+
+                </div>
+
+
                 <div class="card">
 
                     <div class="table-tools">
@@ -497,6 +537,34 @@
                                     <td>Teacher I</td>
                                     <td>4</td>
                                     <td>With MA Units</td>
+                                    <td class="lesson-action-cell">
+                                        <div class="lesson-actions">
+                                            <button type="button" class="table-btn preview-lesson-btn" title="Preview lesson plan">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </button>
+                                            <select class="reviewer-select" title="Choose who will check this file">
+                                                <option value="admin">Admin Check</option>
+                                                <option value="department-head">Department Head Check</option>
+                                            </select>
+                                            <button type="button" class="table-btn assign-review-btn" title="Assign reviewer">
+                                                <i class="fa-solid fa-user-check"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <tr data-department="Academic">
+                                    <td>Maria L. Santos</td>
+                                    <td>Female</td>
+                                    <td>36</td>
+                                    <td>
+                                        <span class="status academic">
+                                            Academic
+                                        </span>
+                                    </td>
+                                    <td>Teacher II</td>
+                                    <td>11</td>
+                                    <td>MA Graduate</td>
                                     <td class="lesson-action-cell">
                                         <div class="lesson-actions">
                                             <button type="button" class="table-btn preview-lesson-btn" title="Preview lesson plan">
@@ -637,10 +705,6 @@
 
                 </div>
 
-                <div class="access-banner" id="teacherAccessBanner">
-                    <i class="fa-solid fa-lock"></i>
-                    <div><strong>Private teacher view</strong><span>You can upload and view only your own submitted files. Admin and Department Head accounts can review all teacher submissions.</span></div>
-                </div>
 
                 <div class="card">
 
@@ -685,8 +749,8 @@
 
                             <tbody>
 
-                                <tr data-submitted-at="2026-08-24T16:20" data-due-at="2026-08-28T17:00">
-                                    <td>Aug 24, 2026 4:20 PM</td>
+                                <tr data-submitted-at="2026-09-14T16:20" data-due-at="2026-09-18T17:00">
+                                    <td>Sep 14, 2026 4:20 PM</td>
                                     <td>Ana Marie Villanueva</td>
                                     <td>
                                         <span class="status academic">
@@ -697,7 +761,7 @@
                                     <td>Grade 11 - STEM A</td>
                                     <td>Term 1</td>
                                     <td>Week 3</td>
-                                    <td class="lesson-due-cell">Aug 28, 2026 5:00 PM</td>
+                                    <td class="lesson-due-cell">Sep 18, 2026 5:00 PM</td>
                                     <td>
                                         <span class="file-chip">
                                             <i class="fa-solid fa-file-pdf"></i>
@@ -725,8 +789,8 @@
                                     </td>
                                 </tr>
 
-                                <tr data-submitted-at="2026-08-29T09:15" data-due-at="2026-08-28T17:00">
-                                    <td>Aug 29, 2026 9:15 AM</td>
+                                <tr data-submitted-at="2026-09-19T09:15" data-due-at="2026-09-18T17:00">
+                                    <td>Sep 19, 2026 9:15 AM</td>
                                     <td>Ramon C. Dela Peña</td>
                                     <td>
                                         <span class="status academic">
@@ -737,7 +801,7 @@
                                     <td>Grade 11 - ABM A</td>
                                     <td>Term 1</td>
                                     <td>Week 3</td>
-                                    <td class="lesson-due-cell">Aug 28, 2026 5:00 PM</td>
+                                    <td class="lesson-due-cell">Sep 18, 2026 5:00 PM</td>
                                     <td>
                                         <span class="file-chip">
                                             <i class="fa-solid fa-file-word"></i>
@@ -765,8 +829,8 @@
                                     </td>
                                 </tr>
 
-                                <tr data-submitted-at="2026-08-25T15:40" data-due-at="2026-08-28T17:00">
-                                    <td>Aug 25, 2026 3:40 PM</td>
+                                <tr data-submitted-at="2026-09-15T15:40" data-due-at="2026-09-18T17:00">
+                                    <td>Sep 15, 2026 3:40 PM</td>
                                     <td>Jerome A. Bautista</td>
                                     <td>
                                         <span class="status techpro">
@@ -777,7 +841,7 @@
                                     <td>Grade 10 - Rizal</td>
                                     <td>Term 1</td>
                                     <td>Week 4</td>
-                                    <td class="lesson-due-cell">Aug 28, 2026 5:00 PM</td>
+                                    <td class="lesson-due-cell">Sep 18, 2026 5:00 PM</td>
                                     <td>
                                         <span class="file-chip">
                                             <i class="fa-solid fa-file-pdf"></i>
@@ -805,7 +869,7 @@
                                     </td>
                                 </tr>
 
-                                <tr data-due-at="2026-08-28T17:00">
+                                <tr data-due-at="2026-09-18T17:00">
                                     <td>—</td>
                                     <td>Maria L. Santos</td>
                                     <td>
@@ -817,7 +881,7 @@
                                     <td>Grade 10 - Bonifacio</td>
                                     <td>Term 1</td>
                                     <td>Week 3</td>
-                                    <td class="lesson-due-cell">Aug 28, 2026 5:00 PM</td>
+                                    <td class="lesson-due-cell">Sep 18, 2026 5:00 PM</td>
                                     <td>
                                         <span class="file-chip">
                                             <i class="fa-solid fa-file-circle-xmark"></i>
@@ -1042,6 +1106,7 @@
                         <option data-department="Academic">Ana Marie Villanueva</option>
                         <option data-department="Academic">Ramon C. Dela Peña</option>
                         <option data-department="TechPro">Jerome A. Bautista</option>
+                        <option data-department="Academic">Maria L. Santos</option>
                     </select>
                 </label>
 

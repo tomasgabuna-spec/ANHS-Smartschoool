@@ -8,8 +8,12 @@
 ================================ */
 
 /* Demo accounts. In a real system these would be
-   verified against the school's database. Adviser
-   accounts see a reduced menu (see ADMIN_ONLY_PAGES). */
+   verified against the school's database. Teacher
+   accounts see a reduced menu (see ADMIN_ONLY_PAGES)
+   and can only see and upload their own lesson plans
+   (see applyLessonPlanVisibility). The "name" field is
+   what ties a teacher account to their rows in the
+   Lesson Plan table / Teacher Name dropdown. */
 
 const DEMO_ACCOUNTS = [
     {
@@ -21,30 +25,22 @@ const DEMO_ACCOUNTS = [
         initials: "AD"
     },
     {
-        username: "depthead",
-        password: "depthead123",
-        role: "department-head",
-        name: "Department Head",
-        title: "Department Head",
-        initials: "DH"
-    },
-    {
-        username: "adviser1",
-        password: "adviser123",
-        role: "adviser",
-        name: "Mr. J. Santos",
-        title: "Adviser - Grade 11 STEM A",
-        initials: "JS",
+        username: "teacher1",
+        password: "teacher123",
+        role: "teacher",
+        name: "Ana Marie Villanueva",
+        title: "Teacher - Grade 11 STEM A",
+        initials: "AV",
         grade: "Grade 11",
         section: "STEM A"
     },
     {
-        username: "adviser2",
-        password: "adviser123",
-        role: "adviser",
-        name: "Ms. L. Cruz",
-        title: "Adviser - Grade 10 Rizal",
-        initials: "LC",
+        username: "teacher2",
+        password: "teacher123",
+        role: "teacher",
+        name: "Jerome A. Bautista",
+        title: "Teacher - Grade 10 Rizal",
+        initials: "JB",
         grade: "Grade 10",
         section: "Rizal"
     }
@@ -71,10 +67,11 @@ const loginPasswordInput =
     document.getElementById("loginPassword");
 
 const ADMIN_ONLY_PAGES =
-    ["navTeachers", "navSettings", "navSubmissionTracker"];
+    ["navTeachers", "navSubmissionTracker", "navSettings"];
 
-const REVIEWER_ROLES = ["admin", "department-head"];
-const TEACHER_ROLES = ["adviser", "teacher"];
+const RESTRICTED_TEACHER_PAGES =
+    ["teachers", "submissiontracker", "settings"];
+
 const TRACKER_NAV_ID = "navSubmissionTracker";
 
 
@@ -104,94 +101,84 @@ function showLoginPage() {
 }
 
 
-function isReviewer() {
-    return currentUser && REVIEWER_ROLES.includes(currentUser.role);
-}
-
-function isTeacher() {
-    return currentUser && TEACHER_ROLES.includes(currentUser.role);
-}
-
 function applyUserRole(account) {
+
+    /* Sidebar + topbar identity */
 
     const initials = account.initials;
 
     document.getElementById("sidebarAvatar").textContent = initials;
     document.getElementById("sidebarUserName").textContent = account.name;
     document.getElementById("sidebarUserRole").textContent = account.title;
+
     document.getElementById("topbarAvatar").textContent = initials;
     document.getElementById("topbarUserName").textContent = account.name;
     document.getElementById("topbarUserRole").textContent = account.title;
 
-    const isTeacherAccount = TEACHER_ROLES.includes(account.role);
-    const isReviewerAccount = REVIEWER_ROLES.includes(account.role);
+    pageNames.dashboard.subtitle =
+        "Welcome back, " + account.name + "!";
+
+
+    /* Admin-only navigation (Teachers, Submission Tracker,
+       Settings) is hidden from teacher accounts, since a
+       teacher should only upload and track their own lesson
+       plans, not run or monitor the whole school. */
+
+    const isTeacher = account.role === "teacher";
 
     ADMIN_ONLY_PAGES.forEach(function(id) {
-        const navEl = document.getElementById(id);
-        if (navEl) navEl.classList.toggle("hidden", !isReviewerAccount);
+
+        const navEl =
+            document.getElementById(id);
+
+        if (navEl) {
+
+            navEl.classList.toggle("hidden", isTeacher);
+
+        }
+
     });
 
-    // Teachers only need their own Dashboard and Lesson Plans/DLL workspace.
-    const quickAdd = document.querySelector('.quick-action[data-page="teachers"]');
-    if (quickAdd) quickAdd.classList.toggle("hidden", isTeacherAccount);
 
-    const addLessonBtn = document.getElementById("addLessonPlanBtn");
-    if (addLessonBtn) addLessonBtn.classList.toggle("hidden", !isTeacherAccount);
+    /* Lesson Plans / DLL page reads differently for the
+       two roles: admins/department heads oversee everyone's
+       submissions, teachers only manage their own. */
 
-    const accessBanner = document.getElementById("teacherAccessBanner");
-    if (accessBanner) accessBanner.classList.toggle("hidden", !isTeacherAccount);
+    if (pageNames.lessonplans) {
 
-    const lessonSearch = document.getElementById("lessonPlanSearch");
-    if (lessonSearch) lessonSearch.placeholder = isTeacherAccount ? "Search my submissions..." : "Search lesson plans...";
+        pageNames.lessonplans.subtitle =
+            isTeacher
+                ? "Upload and track your own lesson plans / DLL."
+                : "Prepare and track teachers' daily lesson logs (DLL) and lesson plans.";
 
-    const pageHeaderText = document.querySelector("#lessonplans .page-header p");
-    if (pageHeaderText) {
-        pageHeaderText.textContent = isTeacherAccount
-            ? "Upload and monitor your own Daily Lesson Log (DLL) and lesson plans."
-            : "Review and manage teachers' Daily Lesson Logs (DLL) and lesson plans.";
     }
 
-    const teacherSelect = document.getElementById("newLessonTeacher");
-    if (teacherSelect) {
-        Array.from(teacherSelect.options).forEach(option => {
-            if (option.value) option.hidden = isTeacherAccount && option.value !== account.name;
-        });
-        if (isTeacherAccount) {
-            teacherSelect.value = account.name;
-            teacherSelect.disabled = true;
-            teacherSelect.dispatchEvent(new Event("change"));
-        } else {
-            teacherSelect.disabled = false;
-        }
+
+    /* Dashboard: hide school-wide faculty roster stat and
+       "Add Teacher" quick action for teacher accounts. */
+
+    const teacherStatCard =
+        document.getElementById("teacherCount")?.closest(".stat-card");
+
+    if (teacherStatCard) {
+
+        teacherStatCard.classList.toggle("hidden", isTeacher);
+
     }
 
-    applyLessonPlanAccess();
-}
+    const addTeacherQuickAction =
+        document.querySelector('.quick-action[data-page="teachers"]');
 
-function applyLessonPlanAccess() {
-    const rows = document.querySelectorAll("#lessonPlanTable tbody tr");
-    const teacherName = currentUser ? currentUser.name : "";
-    const teacherAccount = isTeacher();
+    if (addTeacherQuickAction) {
 
-    rows.forEach(row => {
-        const nameCell = row.querySelector("td:nth-child(2)");
-        const owner = nameCell ? nameCell.textContent.trim() : "";
-        const belongsToTeacher = !teacherAccount || owner === teacherName;
-        row.dataset.ownerVisible = belongsToTeacher ? "true" : "false";
-        row.classList.toggle("role-hidden-row", !belongsToTeacher);
+        addTeacherQuickAction.classList.toggle("hidden", isTeacher);
 
-        const reviewerControls = row.querySelectorAll(".reviewer-select, .assign-review-btn");
-        reviewerControls.forEach(el => el.classList.toggle("hidden", !isReviewer()));
+    }
 
-        const preview = row.querySelector(".preview-lesson-btn");
-        if (preview) {
-            preview.classList.toggle("hidden", !belongsToTeacher && !isReviewer());
-            preview.title = isReviewer() ? "Preview uploaded file" : "Preview my uploaded file";
-        }
-    });
 
-    const table = document.getElementById("lessonPlanTable");
-    if (table) table.classList.toggle("teacher-private-view", teacherAccount);
+    applyLessonPlanVisibility();
+    updateDashboardCounts();
+
 }
 
 
@@ -256,8 +243,7 @@ if (loginForm) {
 
                 showApp();
 
-                showPage(isTeacher() ? "lessonplans" : "dashboard");
-                applyLessonPlanAccess();
+                showPage("dashboard");
 
             } else {
 
@@ -312,10 +298,6 @@ const pageNames = {
 
 
 function showPage(pageName) {
-
-    if (isTeacher() && ["teachers", "submissiontracker", "settings"].includes(pageName)) {
-        pageName = "lessonplans";
-    }
 
     pages.forEach(page => {
 
@@ -487,6 +469,30 @@ function openLessonPlanModal() {
     }
 
     setDefaultLessonDueDate();
+
+    /* Teachers can only ever upload under their own name —
+       lock the Teacher Name field to whoever is logged in
+       so they can't submit as (or see files under) someone
+       else. Admins keep full control of the field. */
+
+    const teacherSelect =
+        document.getElementById("newLessonTeacher");
+
+    if (teacherSelect) {
+
+        if (currentUser && currentUser.role === "teacher") {
+
+            teacherSelect.value = currentUser.name;
+            teacherSelect.disabled = true;
+            teacherSelect.dispatchEvent(new Event("change"));
+
+        } else {
+
+            teacherSelect.disabled = false;
+
+        }
+
+    }
 
 }
 
@@ -1014,6 +1020,71 @@ function getStatusClass(status) {
 }
 
 
+/* ================================
+   ROLE-BASED LESSON PLAN ACCESS
+
+   Teachers may only upload and see their OWN lesson
+   plan / DLL submissions — never another teacher's
+   uploaded file. Only admin / department-head accounts
+   can browse every submission and choose who checks it
+   (see the "Checked by" reviewer control).
+================================ */
+
+function applyLessonPlanVisibility() {
+
+    const rows =
+        document.querySelectorAll("#lessonPlanTable tbody tr");
+
+    const isTeacher =
+        !!currentUser && currentUser.role === "teacher";
+
+    rows.forEach(function(row) {
+
+        const teacherName =
+            row.querySelectorAll("td")[1]?.textContent.trim() || "";
+
+        const isOwnRow =
+            !currentUser || teacherName === currentUser.name;
+
+        /* A teacher only ever sees rows that belong to them. */
+        row.classList.toggle("hidden", isTeacher && !isOwnRow);
+
+        /* Only admin / department-head can choose the
+           checker for a file, so hide that control for
+           teachers and show a read-only status instead. */
+        const reviewerSelect = row.querySelector(".reviewer-select");
+        const assignBtn = row.querySelector(".assign-review-btn");
+
+        if (reviewerSelect) reviewerSelect.classList.toggle("hidden", isTeacher);
+        if (assignBtn) assignBtn.classList.toggle("hidden", isTeacher);
+
+        const actionsCell = row.querySelector(".lesson-actions");
+        let badge = row.querySelector(".review-status-badge");
+
+        if (isTeacher && actionsCell) {
+
+            const reviewer = row.dataset.reviewer || "admin";
+
+            if (!badge) {
+                badge = document.createElement("span");
+                badge.className = "review-status-badge";
+                actionsCell.appendChild(badge);
+            }
+
+            badge.innerHTML =
+                `<i class="fa-solid fa-user-shield"></i> ${reviewerLabel(reviewer)}`;
+
+        } else if (badge) {
+
+            badge.remove();
+
+        }
+
+    });
+
+}
+
+
 function formatDueDate(dateTimeValue) {
 
     if (!dateTimeValue) return "—";
@@ -1092,9 +1163,9 @@ if (lessonPlanForm) {
                 ).value;
 
             const teacher =
-                isTeacher()
-                    ? currentUser.name
-                    : document.getElementById("newLessonTeacher").value;
+                document.getElementById(
+                    "newLessonTeacher"
+                ).value;
 
             const department =
                 document.getElementById(
@@ -1264,7 +1335,9 @@ if (lessonPlanForm) {
 
 
             tbody.appendChild(row);
-            applyLessonPlanAccess();
+
+            applyLessonPlanVisibility();
+            renderTeacherComplianceWidget();
 
             updateDashboardCounts();
         updateComplianceDashboard();
@@ -1567,8 +1640,9 @@ if (teacherForm) {
 
 
             teacherForm.reset();
-
             hideTeacherModal();
+
+            renderTeacherComplianceWidget();
 
 
             alert(
@@ -1597,9 +1671,22 @@ function reviewerLabel(value) {
 }
 
 function openLessonPreview(row) {
-    if (!lessonPreviewModal) return;
-    activeLessonRow = row;
+    if (!lessonPreviewModal || !row) return;
+
+    const isTeacher = !!currentUser && currentUser.role === "teacher";
     const cells = row.querySelectorAll("td");
+    const teacherName = cells[1]?.textContent.trim() || "";
+
+    /* Safety net: a teacher can never open another
+       teacher's uploaded file, even if this were somehow
+       triggered outside the normal table view. */
+    if (isTeacher && teacherName !== currentUser.name) return;
+
+    activeLessonRow = row;
+
+    const reviewRouting = document.querySelector(".review-routing");
+    if (reviewRouting) reviewRouting.classList.toggle("hidden", isTeacher);
+
     document.getElementById("previewTeacher").textContent = cells[1]?.textContent.trim() || "—";
     document.getElementById("previewSubject").textContent = cells[3]?.textContent.trim() || "—";
     document.getElementById("previewSection").textContent = cells[4]?.textContent.trim() || "—";
@@ -1639,20 +1726,11 @@ document.addEventListener("click", function(event) {
     const previewButton = event.target.closest(".preview-lesson-btn");
     const assignButton = event.target.closest(".assign-review-btn");
     if (previewButton) {
-        const row = previewButton.closest("tr");
-        const owner = row?.querySelector("td:nth-child(2)")?.textContent.trim();
-        if (isTeacher() && owner !== currentUser.name) {
-            alert("Access denied. Teachers can only open their own uploaded files.");
-            return;
-        }
-        openLessonPreview(row);
+        openLessonPreview(previewButton.closest("tr"));
         return;
     }
     if (assignButton) {
-        if (!isReviewer()) {
-            alert("Only Admin or Department Head can assign a checker.");
-            return;
-        }
+        if (currentUser && currentUser.role === "teacher") return;
         const row = assignButton.closest("tr");
         const select = row?.querySelector(".reviewer-select");
         if (row && select) {
@@ -1664,6 +1742,7 @@ document.addEventListener("click", function(event) {
 
 document.addEventListener("change", function(event) {
     if (!event.target.matches(".reviewer-select")) return;
+    if (currentUser && currentUser.role === "teacher") return;
     const row = event.target.closest("tr");
     if (row) row.dataset.reviewer = event.target.value;
 });
@@ -1674,11 +1753,8 @@ lessonPreviewModal?.addEventListener("click", function(event) {
     if (event.target === lessonPreviewModal) closeLessonPreview();
 });
 saveReviewerBtn?.addEventListener("click", function() {
-    if (!isReviewer()) {
-        alert("Only Admin or Department Head can assign a checker.");
-        return;
-    }
     if (!activeLessonRow) return;
+    if (currentUser && currentUser.role === "teacher") return;
     const reviewer = previewReviewerSelect.value;
     activeLessonRow.dataset.reviewer = reviewer;
     const rowSelect = activeLessonRow.querySelector(".reviewer-select");
@@ -1686,9 +1762,6 @@ saveReviewerBtn?.addEventListener("click", function() {
     document.getElementById("previewReviewer").textContent = reviewerLabel(reviewer);
     alert(`File assigned to ${reviewerLabel(reviewer)} for checking.`);
 });
-
-
-applyLessonPlanAccess();
 
 
 /* ================================
@@ -1877,6 +1950,34 @@ function renderSubmissionTracker() {
     document.getElementById("trackerMissing").textContent = counts["Missing"];
 }
 
+/* ================================
+   WEEKLY COMPLIANCE SNAPSHOT WIDGET
+   (Teachers page) — same one-row-per-teacher logic as
+   the full Submission Tracker, always for the current
+   week / all terms, with a shortcut into the full page.
+================================ */
+
+function renderTeacherComplianceWidget() {
+    const totalEl = document.getElementById("teacherWidgetTotal");
+    if (!totalEl) return;
+
+    const teachers = getTeacherRecords();
+    let counts = { "On Time": 0, "Late": 0, "Missing": 0 };
+
+    teachers.forEach(teacher => {
+        const compliance = getTeacherWeekCompliance(teacher.name, 0, "all");
+        counts[compliance.status]++;
+    });
+
+    totalEl.textContent = teachers.length;
+    document.getElementById("teacherWidgetOnTime").textContent = counts["On Time"];
+    document.getElementById("teacherWidgetLate").textContent = counts["Late"];
+    document.getElementById("teacherWidgetMissing").textContent = counts["Missing"];
+
+    const weekLabel = document.getElementById("teacherWidgetWeekLabel");
+    if (weekLabel) weekLabel.textContent = `Current week • ${getWeekRangeLabel(0)}`;
+}
+
 ["trackerWeekFilter", "trackerTermFilter"].forEach(id => {
     const element = document.getElementById(id);
     if (element) element.addEventListener("change", renderSubmissionTracker);
@@ -1887,8 +1988,19 @@ if (trackerSearch) trackerSearch.addEventListener("input", renderSubmissionTrack
 
 const originalShowPage = showPage;
 showPage = function(pageName) {
+
+    /* Defense in depth: even if a teacher account somehow
+       triggers navigation to an admin-only page (its nav
+       link is already hidden), fall back to the dashboard
+       instead of rendering it. */
+    if (currentUser && currentUser.role === "teacher" && RESTRICTED_TEACHER_PAGES.includes(pageName)) {
+        pageName = "dashboard";
+    }
+
     originalShowPage(pageName);
     if (pageName === "submissiontracker") renderSubmissionTracker();
+    if (pageName === "lessonplans") applyLessonPlanVisibility();
+    if (pageName === "teachers") renderTeacherComplianceWidget();
 };
 
 /* ================================
@@ -1957,8 +2069,21 @@ normalizeLessonPlanStatuses();
 
 function updateDashboardCounts() {
 
+    const isTeacher =
+        !!currentUser && currentUser.role === "teacher";
+
     const lessonRows =
-        document.querySelectorAll("#lessonPlanTable tbody tr");
+        Array.from(document.querySelectorAll("#lessonPlanTable tbody tr"))
+            .filter(function(row) {
+
+                if (!isTeacher) return true;
+
+                const teacherName =
+                    row.querySelectorAll("td")[1]?.textContent.trim() || "";
+
+                return teacherName === currentUser.name;
+
+            });
 
     const lessonCount =
         document.getElementById("lessonPlanCount");
@@ -1993,6 +2118,7 @@ document.addEventListener(
 
         updateDashboardCounts();
         renderSubmissionTracker();
+        renderTeacherComplianceWidget();
 
     }
 );
