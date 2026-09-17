@@ -179,6 +179,7 @@ body {
 }
 
 #loginForm input[type="text"],
+#loginForm input[type="email"],
 #loginForm input[type="password"] {
     width: 100%;
 
