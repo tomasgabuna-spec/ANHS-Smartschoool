@@ -20,7 +20,7 @@
    Teacher Name dropdown - keep it identical in both places. */
 
 let currentUser = null;
-const loginPasswordInput = document.getElementById("loginPassword");
+
 
 /* ================================
    TEACHERS / LESSON PLANS - FIRESTORE
@@ -434,8 +434,22 @@ if (loginForm) {
 
             } catch (err) {
 
-                loginError.textContent =
-                    "Invalid email or password.";
+                console.error("Login failed:", err);
+
+                const msg = String((err && err.message) || "");
+                const isCredentialError =
+                    err && (err.name === "AuthApiError" || err.status === 400) &&
+                    /invalid login credentials/i.test(msg);
+
+                if (isCredentialError) {
+                    loginError.textContent = "Invalid email or password.";
+                } else if (err && /confirm/i.test(msg)) {
+                    loginError.textContent = "Please confirm your email first.";
+                } else if (/fetch|network/i.test(msg)) {
+                    loginError.textContent = "Cannot reach Supabase. Check supabase-config.js.";
+                } else {
+                    loginError.textContent = "Signed in, but the app failed to load: " + msg;
+                }
 
                 loginError.classList.add("show");
 
