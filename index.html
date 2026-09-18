@@ -92,7 +92,7 @@
             </button>
 
             <p class="login-hint">
-                Sign in with the email and password your admin created for you in Firebase.
+                Sign in with the email and password your admin created for you in ANHS SmartSchool.
             </p>
 
         </form>
@@ -466,7 +466,7 @@
 
                             <tbody>
 
-                            <!-- Rows are rendered live from Firestore by renderTeacherTable() in script.js -->
+                            <!-- Rows are rendered live from Supabase by renderTeacherTable() in script.js -->
 
                             </tbody>
 
@@ -636,7 +636,7 @@
 
                             <tbody>
 
-                            <!-- Rows are rendered live from Firestore by renderLessonPlanTable() in script.js -->
+                            <!-- Rows are rendered live from Supabase by renderLessonPlanTable() in script.js -->
 
                             </tbody>
 
@@ -1166,15 +1166,9 @@
 <input type="file" id="avatarUploadInput" accept="image/*" style="display:none">
 <input type="file" id="logoUploadInput" accept="image/*" style="display:none">
 
-<!-- Firebase (compat SDK - works with plain <script> tags, no build step) -->
-<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-storage-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-analytics-compat.js"></script>
-
-<!-- Your project's Firebase keys live here - see FIREBASE_SETUP.txt -->
-<script src="firebase-config.js"></script>
+<!-- Supabase browser SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
 
 <script src="script.js"></script>
 

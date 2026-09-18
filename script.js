@@ -7,9 +7,9 @@
    LOGIN / AUTHENTICATION
 ================================ */
 
-/* Accounts now live in Firebase:
-   - Firebase Authentication holds the email + password.
-   - A matching Firestore document in the "users" collection
+/* Accounts now live in Supabase:
+   - Supabase Authentication holds the email + password.
+   - A matching Supabase document in the "users" collection
      (doc ID = the account's Auth UID) holds the profile info
      below: role, name, title, initials, grade, section.
    See FIREBASE_SETUP.txt for exactly how to create one.
@@ -48,289 +48,86 @@ function escapeHtml(value) {
 }
 
 
-/* Starts (or restarts) the two live Firestore listeners.
+/* Starts (or restarts) the two live Supabase listeners.
    Called once a user is signed in. Every other teacher/admin
    signed in at the same time gets the same updates in real
    time, which is what makes submissions "shared" instead of
    living only in one browser's memory. */
 
 function startDataListeners() {
-
-    if (teachersUnsubscribe) teachersUnsubscribe();
-    if (lessonPlansUnsubscribe) lessonPlansUnsubscribe();
-
-    teachersUnsubscribe = db.collection("teachers")
-        .orderBy("name")
-        .onSnapshot(function(snapshot) {
-
-            teachersCache = snapshot.docs.map(function(doc) {
-                return Object.assign({ id: doc.id }, doc.data());
-            });
-
-            renderTeacherTable();
-            populateLessonTeacherOptions();
-            renderTeacherComplianceWidget();
-            renderSubmissionTracker();
-            updateDashboardCounts();
-            updateComplianceDashboard();
-
-        }, function(err) {
-
-            console.error("Could not load the teacher roster:", err);
-
-        });
-
-    lessonPlansUnsubscribe = db.collection("lessonPlans")
-        .orderBy("submittedAt", "desc")
-        .onSnapshot(function(snapshot) {
-
-            lessonPlansCache = snapshot.docs.map(function(doc) {
-                return Object.assign({ id: doc.id }, doc.data());
-            });
-
-            renderLessonPlanTable();
-            renderTeacherComplianceWidget();
-            renderSubmissionTracker();
-            updateDashboardCounts();
-            updateComplianceDashboard();
-
-        }, function(err) {
-
-            console.error("Could not load lesson plan submissions:", err);
-
-        });
-
+    if (teachersUnsubscribe) supabaseClient.removeChannel(teachersUnsubscribe);
+    if (lessonPlansUnsubscribe) supabaseClient.removeChannel(lessonPlansUnsubscribe);
+    teachersUnsubscribe = supabaseClient.channel("teachers-live")
+        .on("postgres_changes", { event: "*", schema: "public", table: "teachers" }, loadTeachers)
+        .subscribe();
+    lessonPlansUnsubscribe = supabaseClient.channel("lessonplans-live")
+        .on("postgres_changes", { event: "*", schema: "public", table: "lesson_plans" }, loadLessonPlans)
+        .subscribe();
+    loadTeachers();
+    loadLessonPlans();
 }
 
+async function loadTeachers() {
+    const { data, error } = await supabaseClient.from("teachers").select("*").order("name", { ascending: true });
+    if (error) { console.error("Could not load the teacher roster:", error); return; }
+    teachersCache = (data || []).map(t => Object.assign({}, t, { postGrad:t.post_grad, createdBy:t.created_by, createdAt:t.created_at }));
+    renderTeacherTable(); populateLessonTeacherOptions(); renderTeacherComplianceWidget(); renderSubmissionTracker(); updateDashboardCounts(); updateComplianceDashboard();
+}
 
-/* Detaches the listeners and clears the local cache on logout,
-   so a signed-out browser doesn't keep watching the collections
-   (Firestore rules would reject it anyway) and the next login
-   starts from a clean slate. */
+async function loadLessonPlans() {
+    const { data, error } = await supabaseClient.from("lesson_plans").select("*").order("submitted_at", { ascending: false });
+    if (error) { console.error("Could not load lesson plan submissions:", error); return; }
+    lessonPlansCache = (data || []).map(plan => Object.assign({}, plan, {
+        submittedAt:plan.submitted_at, dueAt:plan.due_at, fileName:plan.file_name, fileIcon:plan.file_icon,
+        storagePath:plan.storage_path, fileURL:plan.file_url || null, createdBy:plan.created_by, createdAt:plan.created_at,
+        sectionText:plan.section_text || "", hasFile:!!plan.storage_path
+    }));
+    renderLessonPlanTable(); renderTeacherComplianceWidget(); renderSubmissionTracker(); updateDashboardCounts(); updateComplianceDashboard();
+}
 
 function stopDataListeners() {
-
-    if (teachersUnsubscribe) teachersUnsubscribe();
-    if (lessonPlansUnsubscribe) lessonPlansUnsubscribe();
-
-    teachersUnsubscribe = null;
-    lessonPlansUnsubscribe = null;
-
-    teachersCache = [];
-    lessonPlansCache = [];
-
+    if (teachersUnsubscribe) supabaseClient.removeChannel(teachersUnsubscribe);
+    if (lessonPlansUnsubscribe) supabaseClient.removeChannel(lessonPlansUnsubscribe);
+    teachersUnsubscribe = null; lessonPlansUnsubscribe = null; teachersCache = []; lessonPlansCache = [];
 }
 
-
-/* Loads the profile document (role/name/title/initials/...)
-   that matches a signed-in Firebase Auth user, and shapes it
-   into the same "account" object the rest of the app expects. */
-
-async function loadUserProfile(firebaseUser) {
-
-    const doc =
-        await db.collection("users").doc(firebaseUser.uid).get();
-
-    if (!doc.exists) return null;
-
-    const profile = doc.data();
-
-    return {
-        uid: firebaseUser.uid,
-        username: firebaseUser.email,
-        email: firebaseUser.email,
-        role: profile.role,
-        name: profile.name,
-        title: profile.title,
-        initials: profile.initials,
-        grade: profile.grade,
-        section: profile.section,
-        photoURL: profile.photoURL || null
-    };
-
+async function loadUserProfile(user) {
+    const { data: profile, error } = await supabaseClient.from("profiles").select("*").eq("id", user.id).maybeSingle();
+    if (error) { console.error("Could not load user profile:", error); return null; }
+    if (!profile) return null;
+    return { uid:user.id, username:user.email, email:user.email, role:profile.role, name:profile.name, title:profile.title,
+        initials:profile.initials, grade:profile.grade, section:profile.section, photoURL:profile.photo_url || null };
 }
-
-
-/* If the browser still has a signed-in Firebase session
-   (e.g. the page was refreshed), skip straight back into the
-   app instead of showing the login form again. */
 
 let resumedSession = false;
-
-auth.onAuthStateChanged(async function(firebaseUser) {
-
-    if (!firebaseUser || currentUser || resumedSession) return;
-
+supabaseClient.auth.onAuthStateChange(function(event, session) {
+    if (!session || currentUser || resumedSession) return;
     resumedSession = true;
-
-    const account = await loadUserProfile(firebaseUser);
-
-    if (!account) return;
-
-    currentUser = account;
-
-    applyUserRole(account);
-
-    startDataListeners();
-
-    showApp();
-
-    showPage("dashboard");
-
+    setTimeout(async function() {
+        const account = await loadUserProfile(session.user);
+        if (!account) return;
+        currentUser = account; applyUserRole(account); startDataListeners(); showApp(); showPage("dashboard");
+    }, 0);
 });
 
-
-const loginPage =
-    document.getElementById("loginPage");
-
-const appRoot =
-    document.getElementById("app");
-
-const loginForm =
-    document.getElementById("loginForm");
-
-const loginError =
-    document.getElementById("loginError");
-
-const togglePassword =
-    document.getElementById("togglePassword");
-
-const loginPasswordInput =
-    document.getElementById("loginPassword");
-
-const ADMIN_ONLY_PAGES =
-    ["navTeachers", "navSubmissionTracker", "navSettings"];
-
-const RESTRICTED_TEACHER_PAGES =
-    ["teachers", "submissiontracker", "settings"];
-
-const TRACKER_NAV_ID = "navSubmissionTracker";
-
-
-function showApp() {
-
-    loginPage.classList.add("hidden");
-    appRoot.classList.remove("hidden");
-
-}
-
-
-function showLoginPage() {
-
-    appRoot.classList.add("hidden");
-    loginPage.classList.remove("hidden");
-
-    loginError.classList.remove("show");
-
-    currentUser = null;
-
-    stopDataListeners();
-
-    if (auth.currentUser) {
-
-        auth.signOut();
-
-    }
-
-    if (loginForm) {
-
-        loginForm.reset();
-
-    }
-
-}
-
-
-function applyUserRole(account) {
-
-    /* Sidebar + topbar identity */
-
-    const initials = account.initials;
-
-    document.getElementById("sidebarAvatar").textContent = initials;
-    document.getElementById("sidebarUserName").textContent = account.name;
-    document.getElementById("sidebarUserRole").textContent = account.title;
-
-    document.getElementById("topbarAvatar").textContent = initials;
-    document.getElementById("topbarUserName").textContent = account.name;
-    document.getElementById("topbarUserRole").textContent = account.title;
-
-    /* If this account has a profile picture saved in Firebase,
-       show it instead of the initials. */
-
-    applyAccountAvatar(account);
-
-    pageNames.dashboard.subtitle =
-        "Welcome back, " + account.name + "!";
-
-
-    /* Admin-only navigation (Teachers, Submission Tracker,
-       Settings) is hidden from teacher accounts, since a
-       teacher should only upload and track their own lesson
-       plans, not run or monitor the whole school. */
-
-    const isTeacher = account.role === "teacher";
-
-    ADMIN_ONLY_PAGES.forEach(function(id) {
-
-        const navEl =
-            document.getElementById(id);
-
-        if (navEl) {
-
-            navEl.classList.toggle("hidden", isTeacher);
-
-        }
-
-    });
-
-
-    /* Lesson Plans / DLL page reads differently for the
-       two roles: admins/department heads oversee everyone's
-       submissions, teachers only manage their own. */
-
-    if (pageNames.lessonplans) {
-
-        pageNames.lessonplans.subtitle =
-            isTeacher
-                ? "Upload and track your own lesson plans / DLL."
-                : "Prepare and track teachers' daily lesson logs (DLL) and lesson plans.";
-
-    }
-
-
-    /* Dashboard: hide school-wide faculty roster stat and
-       "Add Teacher" quick action for teacher accounts. */
-
-    const teacherStatCard =
-        document.getElementById("teacherCount")?.closest(".stat-card");
-
-    if (teacherStatCard) {
-
-        teacherStatCard.classList.toggle("hidden", isTeacher);
-
-    }
-
-    const addTeacherQuickAction =
-        document.querySelector('.quick-action[data-page="teachers"]');
-
-    if (addTeacherQuickAction) {
-
-        addTeacherQuickAction.classList.toggle("hidden", isTeacher);
-
-    }
-
-
-    applyLessonPlanVisibility();
-    updateDashboardCounts();
-
-}
+const forgotPasswordLink = document.querySelector(".forgot-link");
+if (forgotPasswordLink) forgotPasswordLink.addEventListener("click", async function(event) {
+    event.preventDefault();
+    const email = document.getElementById("loginUsername")?.value.trim();
+    if (!email) return alert("Enter your email address first, then click Forgot password.");
+    try {
+        const redirectTo = window.location.origin + window.location.pathname;
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
+        if (error) throw error;
+        alert("Password reset instructions have been sent if the account exists.");
+    } catch (err) { console.error(err); alert("We could not start the password reset. Check the Supabase Auth settings."); }
+});
 
 
 /* ================================
    PROFILE PICTURE & SCHOOL LOGO
-   UPLOAD (stored in Firebase Storage
-   and linked from Firestore, so the
+   UPLOAD (stored in Supabase Storage
+   and linked from Supabase, so the
    same picture shows on every device)
 ================================ */
 
@@ -415,21 +212,16 @@ function setLogoDisplay(imageUrl) {
 
 
 /* The school logo is shared by everyone, so it's loaded from
-   Firestore as soon as the page opens, even before anyone logs
+   Supabase as soon as the page opens, even before anyone logs
    in (the login page shows it too). */
 
 async function applyStoredLogo() {
 
     try {
 
-        const doc =
-            await db.collection("settings").doc("school").get();
-
-        if (doc.exists && doc.data().logoURL) {
-
-            setLogoDisplay(doc.data().logoURL);
-
-        }
+        const { data, error } = await supabaseClient.from("settings").select("logo_url").eq("id", "school").maybeSingle();
+        if (error) throw error;
+        if (data && data.logo_url) setLogoDisplay(data.logo_url);
 
     } catch (err) {
 
@@ -474,16 +266,13 @@ if (avatarUploadInput) {
 
             try {
 
-                const fileRef =
-                    storage.ref().child("avatars/" + currentUser.uid);
-
-                await fileRef.put(imageFile);
-
-                const url = await fileRef.getDownloadURL();
-
-                await db.collection("users").doc(currentUser.uid).update({
-                    photoURL: url
-                });
+                const path = currentUser.uid + "/avatar";
+                const { error: uploadError } = await supabaseClient.storage.from("avatars").upload(path, imageFile, { upsert:true, contentType:imageFile.type });
+                if (uploadError) throw uploadError;
+                const { data: publicData } = supabaseClient.storage.from("avatars").getPublicUrl(path);
+                const url = publicData.publicUrl;
+                const { error: profileError } = await supabaseClient.from("profiles").update({ photo_url:url }).eq("id", currentUser.uid);
+                if (profileError) throw profileError;
 
                 currentUser.photoURL = url;
 
@@ -539,17 +328,13 @@ if (logoUploadInput) {
 
             try {
 
-                const fileRef =
-                    storage.ref().child("school/logo");
-
-                await fileRef.put(imageFile);
-
-                const url = await fileRef.getDownloadURL();
-
-                await db.collection("settings").doc("school").set(
-                    { logoURL: url },
-                    { merge: true }
-                );
+                const path = "school-logo";
+                const { error: uploadError } = await supabaseClient.storage.from("school-assets").upload(path, imageFile, { upsert:true, contentType:imageFile.type });
+                if (uploadError) throw uploadError;
+                const { data: publicData } = supabaseClient.storage.from("school-assets").getPublicUrl(path);
+                const url = publicData.publicUrl;
+                const { error: settingsError } = await supabaseClient.from("settings").upsert({ id:"school", logo_url:url }, { onConflict:"id" });
+                if (settingsError) throw settingsError;
 
                 setLogoDisplay(url);
 
@@ -618,20 +403,20 @@ if (loginForm) {
 
             try {
 
-                const credential =
-                    await auth.signInWithEmailAndPassword(email, password);
+                const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (authError) throw authError;
 
                 const account =
-                    await loadUserProfile(credential.user);
+                    await loadUserProfile(authData.user);
 
                 if (!account) {
 
                     loginError.textContent =
-                        "No profile found for this account. Ask your admin to finish setting it up in Firestore.";
+                        "No profile found for this account. Ask your admin to finish setting it up in Supabase.";
 
                     loginError.classList.add("show");
 
-                    await auth.signOut();
+                    await supabaseClient.auth.signOut();
 
                     return;
 
@@ -1508,7 +1293,7 @@ function formatDueDate(dateTimeValue) {
 function normalizeLessonPlanStatuses() {
 
     /* Status/due-date cells are now computed live off the
-       Firestore-backed cache every time the table renders, so
+       Supabase-backed cache every time the table renders, so
        refreshing after a deadline-settings change is just a
        re-render rather than patching cells in place. */
     renderLessonPlanTable();
@@ -1649,11 +1434,11 @@ if (lessonPlanForm) {
             const dueAt = rawDueDate;
 
 
-            /* Upload the actual file to Firebase Storage (same
+            /* Upload the actual file to Supabase Storage (same
                pattern already used for avatars/the school logo)
                so it's saved for real and can be opened from any
                device, then save the submission record — with a
-               link to that file — in Firestore so every signed-in
+               link to that file — in Supabase so every signed-in
                account sees it immediately. */
 
             const submitBtn =
@@ -1667,35 +1452,16 @@ if (lessonPlanForm) {
 
             try {
 
-                const storagePath =
-                    "lessonPlans/" + Date.now() + "_" + file.name;
-
-                const fileRef =
-                    storage.ref().child(storagePath);
-
-                await fileRef.put(file);
-
-                const fileURL =
-                    await fileRef.getDownloadURL();
-
-                await db.collection("lessonPlans").add({
-                    teacher: teacher,
-                    department: department,
-                    subject: subject,
-                    sections: sections,
-                    sectionText: sectionText,
-                    term: term,
-                    week: week,
-                    submittedAt: submittedAt,
-                    dueAt: dueAt,
-                    fileName: file.name,
-                    fileIcon: fileIcon,
-                    fileURL: fileURL,
-                    storagePath: storagePath,
-                    reviewer: "admin",
-                    createdBy: currentUser ? currentUser.uid : null,
-                    createdAt: submittedAt
+                const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+                const storagePath = currentUser.uid + "/" + Date.now() + "_" + safeName;
+                const { error: uploadError } = await supabaseClient.storage.from("lesson-plans").upload(storagePath, file, { upsert:false, contentType:file.type || "application/octet-stream" });
+                if (uploadError) throw uploadError;
+                const { error: insertError } = await supabaseClient.from("lesson_plans").insert({
+                    teacher, department, subject, sections, section_text:sectionText, term, week,
+                    submitted_at:submittedAt, due_at:dueAt, file_name:file.name, file_icon:fileIcon, storage_path:storagePath,
+                    reviewer:"admin", created_by:currentUser.uid
                 });
+                if (insertError) { await supabaseClient.storage.from("lesson-plans").remove([storagePath]); throw insertError; }
 
                 hideLessonPlanModal();
 
@@ -1927,7 +1693,7 @@ if (teacherForm) {
             if (!name) return;
 
 
-            /* Saved straight to Firestore's "teachers" collection
+            /* Saved straight to Supabase's "teachers" collection
                instead of just being appended to the table in
                memory, so the roster is shared with every signed-in
                account and survives a refresh. */
@@ -1943,17 +1709,11 @@ if (teacherForm) {
 
             try {
 
-                await db.collection("teachers").add({
-                    name: name,
-                    sex: sex,
-                    age: age,
-                    department: department,
-                    position: position,
-                    years: years,
-                    postGrad: postGrad,
-                    createdBy: currentUser ? currentUser.uid : null,
-                    createdAt: new Date().toISOString()
+                const { error } = await supabaseClient.from("teachers").insert({
+                    name, sex, age:age ? Number(age) : null, department, position, years:years ? Number(years) : null,
+                    post_grad:postGrad, created_by:currentUser ? currentUser.uid : null
                 });
+                if (error) throw error;
 
                 teacherForm.reset();
                 hideTeacherModal();
@@ -2005,7 +1765,8 @@ async function deleteTeacherRecord(teacherId, teacherName) {
 
     try {
 
-        await db.collection("teachers").doc(teacherId).delete();
+        const { error } = await supabaseClient.from("teachers").delete().eq("id", teacherId);
+        if (error) throw error;
 
     } catch (err) {
 
@@ -2033,7 +1794,7 @@ function reviewerLabel(value) {
     return value === "department-head" ? "Department Head" : "Admin / School Administrator";
 }
 
-function openLessonPreview(row) {
+async function openLessonPreview(row) {
     if (!lessonPreviewModal || !row) return;
 
     const isTeacher = !!currentUser && currentUser.role === "teacher";
@@ -2066,16 +1827,16 @@ function openLessonPreview(row) {
     const message = document.getElementById("previewFileMessage");
     frame.hidden = true;
     frame.removeAttribute("src");
-    if (row.dataset.fileUrl && /\.pdf$/i.test(fileName)) {
-        frame.src = row.dataset.fileUrl;
-        frame.hidden = false;
-        message.textContent = "PDF preview is available below.";
-    } else if (fileChip && !/No file submitted/i.test(fileName)) {
-        message.textContent = "File is uploaded. Use the assigned checker action to review the document.";
-    } else {
-        message.textContent = "No uploaded file is available for preview.";
-    }
-    lessonPreviewModal.classList.add("show");
+    if (row.dataset.storagePath && !/No file submitted/i.test(fileName)) {
+        lessonPreviewModal.classList.add("show");
+        message.textContent = "Preparing secure file preview...";
+        try {
+            const { data, error } = await supabaseClient.storage.from("lesson-plans").createSignedUrl(row.dataset.storagePath, 300);
+            if (error) throw error;
+            if (/\.pdf$/i.test(fileName)) { frame.src = data.signedUrl; frame.hidden = false; message.textContent = "PDF preview is available below."; }
+            else message.textContent = "File is uploaded. Use the assigned checker action to review the document.";
+        } catch (err) { console.error(err); message.textContent = "The file could not be opened. Please check your access and try again."; }
+    } else { message.textContent = "No uploaded file is available for preview."; lessonPreviewModal.classList.add("show"); }
 }
 
 function closeLessonPreview() {
@@ -2085,7 +1846,7 @@ function closeLessonPreview() {
     activeLessonRow = null;
 }
 
-/* Persists a reviewer assignment to the lesson plan's Firestore
+/* Persists a reviewer assignment to the lesson plan's Supabase
    doc. The live listener (startDataListeners) then re-renders the
    table for every signed-in account, so the assignment is shared
    immediately instead of only living in one browser's row. */
@@ -2094,9 +1855,8 @@ async function updateLessonPlanReviewer(planId, reviewer) {
 
     try {
 
-        await db.collection("lessonPlans").doc(planId).update({
-            reviewer: reviewer
-        });
+        const { error } = await supabaseClient.from("lesson_plans").update({ reviewer }).eq("id", planId);
+        if (error) throw error;
 
         alert(`File assigned to ${reviewerLabel(reviewer)} for checking.`);
 
@@ -2229,7 +1989,7 @@ function getTrackerWeekOffset() {
 }
 
 /* Teacher roster and lesson-plan records now come straight from
-   the live Firestore caches (see startDataListeners) instead of
+   the live Supabase caches (see startDataListeners) instead of
    being scraped back out of the HTML table — the table is just a
    rendered view of this data now. */
 
@@ -2247,7 +2007,7 @@ function getLessonPlanRecords() {
         teacher: plan.teacher || "",
         term: plan.term || "",
         week: plan.week || "",
-        hasFile: !!plan.fileURL
+        hasFile: !!(plan.fileURL || plan.storagePath)
     }));
 }
 
@@ -2323,12 +2083,12 @@ function renderLessonPlanTable() {
 
         tbody.innerHTML = lessonPlansCache.map(function(plan) {
 
-            const status = getLessonPlanStatus(plan.submittedAt, plan.dueAt, !!plan.fileURL);
+            const status = getLessonPlanStatus(plan.submittedAt, plan.dueAt, !!(plan.fileURL || plan.storagePath));
             const department = plan.department || "Academic";
             const departmentClass = department === "TechPro" ? "techpro" : "academic";
             const reviewer = plan.reviewer || "admin";
 
-            const fileCellHtml = plan.fileURL
+            const fileCellHtml = plan.storagePath
                 ? `<span class="file-chip"><i class="fa-solid ${plan.fileIcon || "fa-file-lines"}"></i> ${escapeHtml(plan.fileName || "File")}</span>`
                 : `<span class="file-chip"><i class="fa-solid fa-file-circle-xmark"></i> No file submitted</span>`;
 
@@ -2338,7 +2098,7 @@ function renderLessonPlanTable() {
                 data-due-at="${plan.dueAt || ""}"
                 data-reviewer="${reviewer}"
                 data-file-name="${escapeHtml(plan.fileName || "")}"
-                data-file-url="${plan.fileURL || ""}"
+                data-storage-path="${escapeHtml(plan.storagePath || "")}"
             >
                 <td>${plan.submittedAt ? formatDueDate(plan.submittedAt) : "—"}</td>
                 <td>${escapeHtml(plan.teacher || "")}</td>
@@ -2558,7 +2318,7 @@ showPage = function(pageName) {
 /* ================================
    WEEKLY COMPLIANCE DASHBOARD
    (now computed live from the same
-   Firestore-backed teacher/lesson-plan
+   Supabase-backed teacher/lesson-plan
    caches that power the Submission
    Tracker, instead of hardcoded numbers)
 ================================ */
