@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ANHS Login Test</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 24px auto; padding: 0 16px; }
+  input, button { font-size: 16px; padding: 8px; margin: 4px 0; width: 100%; box-sizing: border-box; }
+  button { cursor: pointer; }
+  pre { background: #f3f3f3; padding: 12px; white-space: pre-wrap; word-break: break-word; border-radius: 6px; }
+  .ok { color: #0a7a2f; font-weight: 600; } .bad { color: #b00020; font-weight: 600; }
+</style>
+</head>
+<body>
+<h2>ANHS Supabase login test</h2>
+<p>Put this file in the same folder as <code>supabase-config.js</code>. It does not store anything.</p>
+
+<label>Email<input id="email" type="email" autocomplete="off"></label>
+<label>Password<input id="pw" type="password" autocomplete="off"></label>
+<button id="go">Test sign-in</button>
+<pre id="out">Waiting…</pre>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script>
+const out = document.getElementById("out");
+const lines = [];
+function log(text, cls) {
+  lines.push({ text, cls });
+  out.textContent = "";
+  lines.forEach(l => {
+    const s = document.createElement("div");
+    s.textContent = l.text;
+    if (l.cls) s.className = l.cls;
+    out.appendChild(s);
+  });
+}
+function reset() { lines.length = 0; }
+
+// Static checks that run on load
+(async function () {
+  reset();
+  try {
+    log("Project URL: " + SUPABASE_URL);
+    let role = "unknown";
+    try {
+      const payload = JSON.parse(atob(SUPABASE_ANON_KEY.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+      role = payload.role;
+      log("Key role: " + role + "   |   key project ref: " + payload.ref,
+          role === "anon" ? "ok" : "bad");
+      if (payload.ref && !SUPABASE_URL.includes(payload.ref)) log("MISMATCH: key belongs to a different project than the URL.", "bad");
+      if (role === "service_role") log("DANGER: this is the service_role key. Remove it from the site and rotate it in Supabase.", "bad");
+    } catch (e) { log("Key is not a JWT (fine if it is a new-style sb_publishable_ key)."); }
+  } catch (e) { log("Could not read supabase-config.js: " + e.message, "bad"); }
+
+  try {
+    const r = await fetch("script.js?nocache=" + Date.now(), { cache: "no-store" });
+    const t = await r.text();
+    log("Deployed script.js contains patched login handler: " + (t.includes('console.error("Login failed:"') ? "YES" : "NO (old version is live)"),
+        t.includes('console.error("Login failed:"') ? "ok" : "bad");
+  } catch (e) { log("Could not fetch script.js: " + e.message); }
+})();
+
+document.getElementById("go").addEventListener("click", async function () {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("pw").value;
+  log("— Signing in as " + email + " …");
+  try {
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if (error) {
+      log("SIGN-IN FAILED: " + error.name + " | status " + error.status + " | " + error.message, "bad");
+      return;
+    }
+    log("SIGN-IN OK. User id: " + data.user.id, "ok");
+    log("Email confirmed at: " + (data.user.email_confirmed_at || "NOT CONFIRMED"));
+    const p = await supabaseClient.from("profiles").select("*").eq("id", data.user.id).maybeSingle();
+    if (p.error) log("PROFILE QUERY ERROR: " + p.error.code + " | " + p.error.message, "bad");
+    else if (!p.data) log("NO PROFILE ROW for this user id (or blocked by RLS).", "bad");
+    else log("Profile found: role=" + p.data.role + ", name=" + p.data.name, "ok");
+    await supabaseClient.auth.signOut();
+  } catch (e) {
+    log("EXCEPTION: " + (e && e.message ? e.message : e), "bad");
+  }
+});
+</script>
+</body>
+</html>
