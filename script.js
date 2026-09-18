@@ -20,7 +20,7 @@
    Teacher Name dropdown - keep it identical in both places. */
 
 let currentUser = null;
-
+const loginPasswordInput = document.getElementById("loginPassword");
 
 /* ================================
    TEACHERS / LESSON PLANS - FIRESTORE
