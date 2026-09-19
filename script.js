@@ -1653,6 +1653,8 @@ if (lessonPlanForm) {
                 });
                 if (insertError) { await supabaseClient.storage.from("lesson-plans").remove([storagePath]); throw insertError; }
 
+                await loadLessonPlans();
+
                 hideLessonPlanModal();
 
                 alert(
@@ -1905,6 +1907,8 @@ if (teacherForm) {
                 });
                 if (error) throw error;
 
+                await loadTeachers();
+
                 teacherForm.reset();
                 hideTeacherModal();
 
@@ -1957,6 +1961,8 @@ async function deleteTeacherRecord(teacherId, teacherName) {
 
         const { error } = await supabaseClient.from("teachers").delete().eq("id", teacherId);
         if (error) throw error;
+
+        await loadTeachers();
 
     } catch (err) {
 
@@ -2047,6 +2053,8 @@ async function updateLessonPlanReviewer(planId, reviewer) {
 
         const { error } = await supabaseClient.from("lesson_plans").update({ reviewer }).eq("id", planId);
         if (error) throw error;
+
+        await loadLessonPlans();
 
         alert(`File assigned to ${reviewerLabel(reviewer)} for checking.`);
 
@@ -2175,7 +2183,9 @@ function getWeekRangeLabel(offsetWeeks = 0) {
 
 function getTrackerWeekOffset() {
     const value = document.getElementById("trackerWeekFilter")?.value || "current";
-    return value === "previous" ? -1 : 0;
+    if (value === "previous") return -1;
+    if (value === "next") return 1;
+    return 0;
 }
 
 /* Teacher roster and lesson-plan records now come straight from
@@ -2413,7 +2423,7 @@ function renderSubmissionTracker() {
     const teachers = getTeacherRecords().filter(teacher => teacher.name.toLowerCase().includes(search));
 
     const label = document.getElementById("trackerWeekLabel");
-    if (label) label.textContent = `${offsetWeeks === 0 ? "Current week" : "Previous week"} • ${getWeekRangeLabel(offsetWeeks)}`;
+    if (label) label.textContent = `${offsetWeeks === 0 ? "Current week" : offsetWeeks < 0 ? "Previous week" : "Next week"} • ${getWeekRangeLabel(offsetWeeks)}`;
 
     let counts = { "On Time": 0, "Late": 0, "Missing": 0 };
 
