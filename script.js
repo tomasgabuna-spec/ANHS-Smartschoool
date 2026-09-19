@@ -856,6 +856,20 @@ function openLessonPlanModal() {
 
         if (currentUser && currentUser.role === "teacher") {
 
+            /* The Teacher Name list is built from the roster. If this
+               teacher hasn't been added to the roster (or it hasn't loaded),
+               add their own name here so the field is never left empty. */
+            const hasOwnOption = Array.from(teacherSelect.options).some(function(option) {
+                return option.value === currentUser.name;
+            });
+
+            if (!hasOwnOption) {
+                const ownOption = document.createElement("option");
+                ownOption.value = currentUser.name;
+                ownOption.textContent = currentUser.name;
+                teacherSelect.appendChild(ownOption);
+            }
+
             teacherSelect.value = currentUser.name;
             teacherSelect.disabled = true;
             teacherSelect.dispatchEvent(new Event("change"));
@@ -1368,10 +1382,15 @@ if (lessonPlanForm) {
                     "newLessonWeek"
                 ).value;
 
-            const teacher =
+            let teacher =
                 document.getElementById(
                     "newLessonTeacher"
                 ).value;
+
+            /* A teacher account can only ever submit under its own name. */
+            if (currentUser && currentUser.role === "teacher") {
+                teacher = currentUser.name;
+            }
 
             const department =
                 document.getElementById(
@@ -1408,6 +1427,11 @@ if (lessonPlanForm) {
 
                 hasError = true;
 
+            }
+
+            if (!teacher) {
+                alert("Please select the teacher name first.");
+                hasError = true;
             }
 
 
@@ -1487,7 +1511,8 @@ if (lessonPlanForm) {
                 console.error("Could not save the lesson plan:", err);
 
                 alert(
-                    "Sorry, that lesson plan couldn't be uploaded. Please check your connection and try again."
+                    "Sorry, that lesson plan couldn't be uploaded. Please check your connection and try again." +
+                    (err && err.message ? "\n\nDetails: " + err.message : "")
                 );
 
             } finally {
