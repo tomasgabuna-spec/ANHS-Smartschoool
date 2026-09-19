@@ -1455,8 +1455,16 @@ if (lessonPlanForm) {
 
             try {
 
+                /* Files are organised by Term and Week, e.g.
+                   Term_2/Week_1/<account id>/<Teacher_Name>_<time>_<file>
+                   so every week has its own folder in Supabase Storage. The
+                   account id folder is what keeps a teacher's files private. */
+                const folderSafe = function(value) {
+                    return String(value || "").trim().replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "Unsorted";
+                };
                 const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-                const storagePath = currentUser.uid + "/" + Date.now() + "_" + safeName;
+                const storagePath = folderSafe(term) + "/" + folderSafe(week) + "/" + currentUser.uid + "/" +
+                    folderSafe(teacher) + "_" + Date.now() + "_" + safeName;
                 const { error: uploadError } = await supabaseClient.storage.from("lesson-plans").upload(storagePath, file, { upsert:false, contentType:file.type || "application/octet-stream" });
                 if (uploadError) throw uploadError;
                 const { error: insertError } = await supabaseClient.from("lesson_plans").insert({
