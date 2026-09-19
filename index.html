@@ -163,6 +163,10 @@
                 <span id="sidebarUserRole">School Admin</span>
             </div>
 
+            <button type="button" class="change-password-btn" id="changePasswordBtn" title="Change password">
+                <i class="fa-solid fa-key"></i>
+            </button>
+
             <button class="logout-btn" title="Logout">
                 <i class="fa-solid fa-right-from-bracket"></i>
             </button>
@@ -1032,6 +1036,61 @@
 
 
 <!-- ================= TEACHER MODAL ================= -->
+
+<!-- ================= CHANGE PASSWORD MODAL ================= -->
+<style>
+    .change-password-btn { border: none; background: transparent; color: var(--muted); cursor: pointer; margin-right: 6px; }
+    .change-password-btn:hover { color: var(--primary, #1b5e20); }
+    #passwordModal .login-error { margin-top: 10px; }
+</style>
+<div class="modal" id="passwordModal">
+
+    <div class="modal-content" style="max-width:440px">
+
+        <div class="modal-header">
+
+            <div>
+                <h2 id="passwordModalTitle">Change Password</h2>
+                <p id="passwordModalHint">Choose a new password for your account.</p>
+            </div>
+
+            <button type="button" class="close-modal" id="closePasswordModal">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+        <form id="passwordForm">
+
+            <div class="form-grid">
+
+                <label class="full-width">
+                    New password
+                    <input type="password" id="newPassword" autocomplete="new-password" minlength="8" placeholder="At least 8 characters" required>
+                </label>
+
+                <label class="full-width">
+                    Confirm new password
+                    <input type="password" id="confirmPassword" autocomplete="new-password" minlength="8" placeholder="Type it again" required>
+                </label>
+
+            </div>
+
+            <p class="login-error" id="passwordError"></p>
+
+            <div class="modal-actions">
+
+                <button type="button" class="outline-btn" id="cancelPasswordModal">Cancel</button>
+
+                <button type="submit" class="primary-btn" id="savePasswordBtn">Save Password</button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
 
 <div class="modal" id="teacherModal">
 

@@ -95,10 +95,102 @@ async function showLoginPage() {
     if (appShellEl) appShellEl.classList.add("hidden");
     if (loginPageEl) loginPageEl.classList.remove("hidden");
 
+    closePasswordModal();
+
     if (loginPasswordInput) loginPasswordInput.value = "";
     if (typeof loginError !== "undefined" && loginError) loginError.classList.remove("show");
 
 }
+
+
+/* ---- Change password (any signed-in account) ----
+   Also used after someone clicks the "Forgot password" email link:
+   Supabase signs them in for that visit and this dialog lets them
+   set the new password. */
+
+const passwordModal = document.getElementById("passwordModal");
+const passwordForm = document.getElementById("passwordForm");
+const passwordError = document.getElementById("passwordError");
+const MIN_PASSWORD_LENGTH = 8;
+let recoveryPending = /type=recovery/.test(window.location.hash);
+
+function openPasswordModal(fromRecovery) {
+    if (!passwordModal) return;
+    if (passwordForm) passwordForm.reset();
+    if (passwordError) { passwordError.textContent = ""; passwordError.classList.remove("show"); }
+    document.getElementById("passwordModalTitle").textContent = fromRecovery ? "Set Your New Password" : "Change Password";
+    document.getElementById("passwordModalHint").textContent = fromRecovery
+        ? "You opened a password reset link. Choose a new password to finish."
+        : "Choose a new password for your account.";
+    passwordModal.classList.add("show");
+    const first = document.getElementById("newPassword");
+    if (first) first.focus();
+}
+
+function closePasswordModal() {
+    if (passwordModal) passwordModal.classList.remove("show");
+    if (passwordForm) passwordForm.reset();
+}
+
+function showPasswordError(message) {
+    if (!passwordError) return;
+    passwordError.textContent = message;
+    passwordError.classList.add("show");
+}
+
+const changePasswordBtn = document.getElementById("changePasswordBtn");
+if (changePasswordBtn) changePasswordBtn.addEventListener("click", function() {
+    if (!currentUser) return;
+    openPasswordModal(false);
+});
+
+["closePasswordModal", "cancelPasswordModal"].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("click", closePasswordModal);
+});
+
+if (passwordModal) passwordModal.addEventListener("click", function(event) {
+    if (event.target === passwordModal) closePasswordModal();
+});
+
+if (passwordForm) passwordForm.addEventListener("submit", async function(event) {
+
+    event.preventDefault();
+
+    const newPassword = document.getElementById("newPassword").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
+
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+        return showPasswordError("Password must be at least " + MIN_PASSWORD_LENGTH + " characters.");
+    }
+
+    if (newPassword !== confirmPassword) {
+        return showPasswordError("The two passwords do not match.");
+    }
+
+    const saveBtn = document.getElementById("savePasswordBtn");
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = "Saving..."; }
+
+    try {
+
+        const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+        if (error) throw error;
+
+        closePasswordModal();
+        alert("Your password has been changed.");
+
+    } catch (err) {
+
+        console.error("Could not change password:", err);
+        showPasswordError(err && err.message ? err.message : "Sorry, the password couldn't be changed. Please try again.");
+
+    } finally {
+
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = "Save Password"; }
+
+    }
+
+});
 
 
 /* ================================
@@ -180,12 +272,17 @@ async function loadUserProfile(user) {
 
 let resumedSession = false;
 supabaseClient.auth.onAuthStateChange(function(event, session) {
+    if (event === "PASSWORD_RECOVERY") {
+        recoveryPending = true;
+        if (currentUser) { recoveryPending = false; openPasswordModal(true); return; }
+    }
     if (!session || currentUser || resumedSession) return;
     resumedSession = true;
     setTimeout(async function() {
         const account = await loadUserProfile(session.user);
         if (!account) return;
         currentUser = account; applyUserRole(account); startDataListeners(); showApp(); showPage("dashboard");
+        if (recoveryPending) { recoveryPending = false; openPasswordModal(true); }
     }, 0);
 });
 
