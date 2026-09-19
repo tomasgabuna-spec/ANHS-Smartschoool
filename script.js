@@ -842,12 +842,6 @@ function openLessonPlanModal() {
 
     lessonPlanModal.classList.add("show");
 
-    if (newLessonDateInput && !newLessonDateInput.value) {
-        const today = new Date();
-        const pad = value => String(value).padStart(2, "0");
-        newLessonDateInput.value = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
-    }
-
     setDefaultLessonDueDate();
 
     /* Teachers can only ever upload under their own name —
@@ -882,8 +876,6 @@ function hideLessonPlanModal() {
     lessonPlanModal.classList.remove("show");
 
     lessonPlanForm.reset();
-
-    resetGradeSectionSelect();
 
     clearLessonFile();
 
@@ -972,7 +964,6 @@ if (newLessonTeacher && newLessonDepartment) {
 
 const newLessonWeek = document.getElementById("newLessonWeek");
 const newLessonDueDate = document.getElementById("newLessonDueDate");
-const newLessonDateInput = document.getElementById("newLessonDate");
 const dueDateHelp = document.getElementById("dueDateHelp");
 
 const DEFAULT_DEADLINE_SETTINGS = {
@@ -1024,14 +1015,17 @@ function updateDeadlineHelp() {
     if (preview) preview.textContent = `Default weekly deadline: ${label}`;
 }
 
+/* With no lesson-date field any more, the default due date is the
+   configured weekly deadline (e.g. Friday 5:00 PM) of the CURRENT
+   week (Monday-Sunday). A plan sent after that deadline shows as Late
+   in the current week instead of disappearing into next week. The
+   admin can still adjust the due date in the form. */
 function setDefaultLessonDueDate() {
-    if (!newLessonDueDate || !newLessonDateInput) return;
-    const deadline = getConfiguredDeadline(newLessonDateInput.value);
+    if (!newLessonDueDate) return;
+    const deadline = getConfiguredDeadline(toInputDate(getWeekStart(0)));
     if (deadline) newLessonDueDate.value = deadline;
     updateDeadlineHelp();
 }
-
-if (newLessonDateInput) newLessonDateInput.addEventListener("change", setDefaultLessonDueDate);
 
 if (newLessonWeek) {
     const placeholderOption = document.createElement("option");
@@ -1079,155 +1073,6 @@ if (saveSettingsBtn) {
 }
 
 initializeDeadlineSettings();
-
-/* ================================
-   GRADE & SECTION MULTI-SELECT
-================================ */
-
-const gradeSectionSelect =
-    document.getElementById("gradeSectionSelect");
-
-const gradeSectionToggle =
-    document.getElementById("gradeSectionToggle");
-
-const gradeSectionToggleText =
-    document.getElementById("gradeSectionToggleText");
-
-const gradeSectionPanel =
-    document.getElementById("gradeSectionPanel");
-
-const gradeSectionField =
-    gradeSectionSelect
-        ? gradeSectionSelect.closest(".dropdown-field")
-        : null;
-
-
-function getCheckedGradeSections() {
-
-    if (!gradeSectionPanel) return [];
-
-    return Array.from(
-        gradeSectionPanel.querySelectorAll(
-            "input[type='checkbox']:checked"
-        )
-    ).map(checkbox => checkbox.value);
-
-}
-
-
-function updateGradeSectionToggleText() {
-
-    const selected =
-        getCheckedGradeSections();
-
-    if (selected.length === 0) {
-
-        gradeSectionToggleText.textContent =
-            "Select grade & section";
-
-    } else if (selected.length === 1) {
-
-        gradeSectionToggleText.textContent =
-            selected[0];
-
-    } else {
-
-        gradeSectionToggleText.textContent =
-            `${selected.length} sections selected`;
-
-    }
-
-}
-
-
-if (gradeSectionToggle) {
-
-    gradeSectionToggle.addEventListener(
-        "click",
-        function(event) {
-
-            event.stopPropagation();
-
-            gradeSectionSelect.classList.toggle("open");
-
-        }
-    );
-
-}
-
-
-if (gradeSectionPanel) {
-
-    gradeSectionPanel.addEventListener(
-        "change",
-        function(event) {
-
-            if (event.target.matches("input[type='checkbox']")) {
-
-                updateGradeSectionToggleText();
-
-                if (gradeSectionField) {
-
-                    gradeSectionField.classList.remove(
-                        "field-invalid"
-                    );
-
-                }
-
-            }
-
-        }
-    );
-
-    gradeSectionPanel.addEventListener(
-        "click",
-        function(event) {
-
-            event.stopPropagation();
-
-        }
-    );
-
-}
-
-
-document.addEventListener("click", function(event) {
-
-    if (
-        gradeSectionSelect &&
-        gradeSectionSelect.classList.contains("open") &&
-        !gradeSectionSelect.contains(event.target)
-    ) {
-
-        gradeSectionSelect.classList.remove("open");
-
-    }
-
-});
-
-
-function resetGradeSectionSelect() {
-
-    if (!gradeSectionPanel) return;
-
-    gradeSectionPanel
-        .querySelectorAll("input[type='checkbox']")
-        .forEach(checkbox => {
-            checkbox.checked = false;
-        });
-
-    updateGradeSectionToggleText();
-
-    if (gradeSectionSelect) {
-        gradeSectionSelect.classList.remove("open");
-    }
-
-    if (gradeSectionField) {
-        gradeSectionField.classList.remove("field-invalid");
-    }
-
-}
-
 
 /* ================================
    LESSON PLAN FILE UPLOAD
@@ -1508,11 +1353,6 @@ if (lessonPlanForm) {
             event.preventDefault();
 
 
-            const rawDate =
-                document.getElementById(
-                    "newLessonDate"
-                ).value;
-
             const rawDueDate =
                 document.getElementById(
                     "newLessonDueDate"
@@ -1543,14 +1383,11 @@ if (lessonPlanForm) {
                     "newLessonSubject"
                 ).value;
 
-            const sections =
-                getCheckedGradeSections();
-
             const file =
                 lessonFileInput.files[0];
 
 
-            /* Validate grade & section */
+            /* Validate the required fields */
 
             let hasError = false;
 
@@ -1560,17 +1397,6 @@ if (lessonPlanForm) {
             } else {
                 document.getElementById("newLessonDueDate").classList.remove("field-invalid");
             }
-
-            if (sections.length === 0) {
-
-                gradeSectionField.classList.add(
-                    "field-invalid"
-                );
-
-                hasError = true;
-
-            }
-
 
             /* Validate uploaded file — required */
 
@@ -1590,23 +1416,6 @@ if (lessonPlanForm) {
             }
 
 
-            const formattedDate =
-                rawDate
-                    ? new Date(rawDate + "T00:00:00")
-                        .toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric"
-                        })
-                    : "";
-
-
-            const sectionText =
-                sections.length === 1
-                    ? sections[0]
-                    : `${sections[0]} +${sections.length - 1} more`;
-
-
             const fileExtension =
                 file.name.split(".").pop().toLowerCase();
 
@@ -1621,7 +1430,11 @@ if (lessonPlanForm) {
 
 
             const submittedAt = new Date().toISOString();
-            const dueAt = rawDueDate;
+            /* The form gives a local date-time with no timezone; convert it to a
+               real UTC timestamp so the database stores the intended moment
+               (otherwise a 5:00 PM deadline is stored as 5:00 PM UTC = 1:00 AM
+               the next day in the Philippines). */
+            const dueAt = new Date(rawDueDate).toISOString();
 
 
             /* Upload the actual file to Supabase Storage (same
@@ -1647,7 +1460,7 @@ if (lessonPlanForm) {
                 const { error: uploadError } = await supabaseClient.storage.from("lesson-plans").upload(storagePath, file, { upsert:false, contentType:file.type || "application/octet-stream" });
                 if (uploadError) throw uploadError;
                 const { error: insertError } = await supabaseClient.from("lesson_plans").insert({
-                    teacher, department, subject, sections, section_text:sectionText, term, week,
+                    teacher, department, subject, term, week,
                     submitted_at:submittedAt, due_at:dueAt, file_name:file.name, file_icon:fileIcon, storage_path:storagePath,
                     reviewer:"admin", created_by:currentUser.uid
                 });
@@ -2009,9 +1822,8 @@ async function openLessonPreview(row) {
 
     document.getElementById("previewTeacher").textContent = cells[1]?.textContent.trim() || "—";
     document.getElementById("previewSubject").textContent = cells[3]?.textContent.trim() || "—";
-    document.getElementById("previewSection").textContent = cells[4]?.textContent.trim() || "—";
-    document.getElementById("previewTermWeek").textContent = `${cells[5]?.textContent.trim() || "—"} / ${cells[6]?.textContent.trim() || "—"}`;
-    document.getElementById("previewStatus").innerHTML = cells[9]?.innerHTML || "—";
+    document.getElementById("previewTermWeek").textContent = `${cells[4]?.textContent.trim() || "—"} / ${cells[5]?.textContent.trim() || "—"}`;
+    document.getElementById("previewStatus").innerHTML = cells[8]?.innerHTML || "—";
     const select = row.querySelector(".reviewer-select");
     const reviewer = row.dataset.reviewer || select?.value || "admin";
     previewReviewerSelect.value = reviewer;
@@ -2274,7 +2086,7 @@ function renderLessonPlanTable() {
 
     if (!lessonPlansCache.length) {
 
-        tbody.innerHTML = `<tr><td colspan="11" class="tracker-no-results">
+        tbody.innerHTML = `<tr><td colspan="10" class="tracker-no-results">
             <i class="fa-solid fa-file-circle-xmark"></i>
             No lesson plans submitted yet.
         </td></tr>`;
@@ -2304,7 +2116,6 @@ function renderLessonPlanTable() {
                 <td>${escapeHtml(plan.teacher || "")}</td>
                 <td><span class="status ${departmentClass}">${escapeHtml(department)}</span></td>
                 <td>${escapeHtml(plan.subject || "")}</td>
-                <td>${escapeHtml(plan.sectionText || "")}</td>
                 <td>${escapeHtml(plan.term || "")}</td>
                 <td>${escapeHtml(plan.week || "")}</td>
                 <td class="lesson-due-cell">${plan.dueAt ? formatDueDate(plan.dueAt) : "—"}</td>
