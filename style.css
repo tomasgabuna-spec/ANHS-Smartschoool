@@ -1447,6 +1447,172 @@ td {
 
 
 /* ==============================
+   LESSON PLAN FOLDER VIEW (DLL Modules)
+================================= */
+
+.view-toggle {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.view-toggle-btn {
+    background: white;
+    border: none;
+    padding: 10px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.view-toggle-btn + .view-toggle-btn {
+    border-left: 1px solid var(--border);
+}
+
+.view-toggle-btn.active {
+    background: var(--primary);
+    color: white;
+}
+
+.folder-view.hidden,
+.table-container.hidden {
+    display: none;
+}
+
+.folder-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--muted);
+    margin: 0 0 18px;
+    flex-wrap: wrap;
+}
+
+.folder-breadcrumb button {
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    font-size: 13px;
+}
+
+.folder-breadcrumb button:hover {
+    text-decoration: underline;
+}
+
+.folder-breadcrumb .crumb-current {
+    color: var(--text);
+    font-weight: 600;
+}
+
+.folder-breadcrumb .crumb-sep {
+    color: var(--border);
+}
+
+.folder-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 14px;
+}
+
+.folder-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s ease, transform .15s ease;
+}
+
+.folder-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.folder-card i {
+    font-size: 26px;
+    color: var(--primary);
+    margin-bottom: 10px;
+    display: block;
+}
+
+.folder-card strong {
+    display: block;
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+
+.folder-card small {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.folder-file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.folder-file-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    cursor: pointer;
+    background: white;
+}
+
+.folder-file-row:hover {
+    border-color: var(--primary);
+}
+
+.folder-file-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.folder-file-main i {
+    font-size: 18px;
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.folder-file-name {
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.folder-file-meta {
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.folder-empty {
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+    padding: 40px 20px;
+}
+
+
+/* ==============================
    MODULE GRID
 ================================= */
 

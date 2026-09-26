@@ -1892,49 +1892,52 @@ const closeLessonPreviewModal = document.getElementById("closeLessonPreviewModal
 const closePreviewBtn = document.getElementById("closePreviewBtn");
 const saveReviewerBtn = document.getElementById("saveReviewerBtn");
 const previewReviewerSelect = document.getElementById("previewReviewerSelect");
-let activeLessonRow = null;
+let activeLessonPlanId = null;
 
 function reviewerLabel(value) {
     return value === "department-head" ? "Department Head" : "Admin / School Administrator";
 }
 
-async function openLessonPreview(row) {
-    if (!lessonPreviewModal || !row) return;
+/* Sourced from lessonPlansCache by id (rather than scraped from a
+   table row) so both the Table view and the DLL Modules folder view
+   can open the same preview modal. */
+async function openLessonPreview(planId) {
+    if (!lessonPreviewModal || !planId) return;
+
+    const plan = lessonPlansCache.find(p => p.id === planId);
+    if (!plan) return;
 
     const isTeacher = !!currentUser && currentUser.role === "teacher";
-    const cells = row.querySelectorAll("td");
-    const teacherName = cells[1]?.textContent.trim() || "";
 
     /* Safety net: a teacher can never open another
        teacher's uploaded file, even if this were somehow
        triggered outside the normal table view. */
-    if (isTeacher && !namesMatch(teacherName, currentUser.name)) return;
+    if (isTeacher && !namesMatch(plan.teacher, currentUser.name)) return;
 
-    activeLessonRow = row;
+    activeLessonPlanId = planId;
 
     const reviewRouting = document.querySelector(".review-routing");
     if (reviewRouting) reviewRouting.classList.toggle("hidden", isTeacher);
 
-    document.getElementById("previewTeacher").textContent = cells[1]?.textContent.trim() || "—";
-    document.getElementById("previewSubject").textContent = cells[3]?.textContent.trim() || "—";
-    document.getElementById("previewTermWeek").textContent = `${cells[4]?.textContent.trim() || "—"} / ${cells[5]?.textContent.trim() || "—"}`;
-    document.getElementById("previewStatus").innerHTML = cells[8]?.innerHTML || "—";
-    const select = row.querySelector(".reviewer-select");
-    const reviewer = row.dataset.reviewer || select?.value || "admin";
+    const status = getLessonPlanStatus(plan.submittedAt, plan.dueAt, !!(plan.fileURL || plan.storagePath));
+    document.getElementById("previewTeacher").textContent = plan.teacher || "—";
+    document.getElementById("previewSubject").textContent = plan.subject || "—";
+    document.getElementById("previewTermWeek").textContent = `${plan.term || "—"} / ${plan.week || "—"}`;
+    document.getElementById("previewStatus").innerHTML = `<span class="status ${getStatusClass(status)}">${status}</span>`;
+    const reviewer = plan.reviewer || "admin";
     previewReviewerSelect.value = reviewer;
     document.getElementById("previewReviewer").textContent = reviewerLabel(reviewer);
-    const fileChip = row.querySelector(".file-chip");
-    const fileName = row.dataset.fileName || fileChip?.textContent.trim() || "No file submitted";
+    const fileName = plan.fileName || (plan.storagePath ? "File" : "No file submitted");
     document.getElementById("previewFileName").textContent = fileName;
     const frame = document.getElementById("lessonFileFrame");
     const message = document.getElementById("previewFileMessage");
     frame.hidden = true;
     frame.removeAttribute("src");
-    if (row.dataset.storagePath && !/No file submitted/i.test(fileName)) {
+    if (plan.storagePath) {
         lessonPreviewModal.classList.add("show");
         message.textContent = "Preparing secure file preview...";
         try {
-            const { data, error } = await supabaseClient.storage.from("lesson-plans").createSignedUrl(row.dataset.storagePath, 300);
+            const { data, error } = await supabaseClient.storage.from("lesson-plans").createSignedUrl(plan.storagePath, 300);
             if (error) throw error;
             if (/\.pdf$/i.test(fileName)) { frame.src = data.signedUrl; frame.hidden = false; message.textContent = "PDF preview is available below."; }
             else message.textContent = "File is uploaded. Use the assigned checker action to review the document.";
@@ -1946,7 +1949,7 @@ function closeLessonPreview() {
     lessonPreviewModal?.classList.remove("show");
     const frame = document.getElementById("lessonFileFrame");
     if (frame) frame.removeAttribute("src");
-    activeLessonRow = null;
+    activeLessonPlanId = null;
 }
 
 /* Persists a reviewer assignment to the lesson plan's Supabase
@@ -1982,7 +1985,7 @@ document.addEventListener("click", function(event) {
     const editTeacherButton = event.target.closest(".edit-teacher-btn");
 
     if (previewButton) {
-        openLessonPreview(previewButton.closest("tr"));
+        openLessonPreview(previewButton.closest("tr")?.dataset.id);
         return;
     }
 
@@ -2028,10 +2031,10 @@ lessonPreviewModal?.addEventListener("click", function(event) {
     if (event.target === lessonPreviewModal) closeLessonPreview();
 });
 saveReviewerBtn?.addEventListener("click", async function() {
-    if (!activeLessonRow || !activeLessonRow.dataset.id) return;
+    if (!activeLessonPlanId) return;
     if (currentUser && currentUser.role === "teacher") return;
     const reviewer = previewReviewerSelect.value;
-    await updateLessonPlanReviewer(activeLessonRow.dataset.id, reviewer);
+    await updateLessonPlanReviewer(activeLessonPlanId, reviewer);
     document.getElementById("previewReviewer").textContent = reviewerLabel(reviewer);
 });
 
@@ -2259,7 +2262,168 @@ function renderLessonPlanTable() {
         lessonPlanSearch.dispatchEvent(new Event("input"));
     }
 
+    renderLessonPlanFolders();
+
 }
+
+
+/* ================================
+   DLL MODULES — FOLDER VIEW
+   Same lessonPlansCache as the table, just browsed as
+   Term 1/2/3 > Week 1-12 > files, matching how the files
+   are actually organised in Supabase Storage.
+================================ */
+
+const TERM_FOLDERS = ["Term 1", "Term 2", "Term 3"];
+const WEEK_FOLDERS = Array.from({ length: 12 }, (_, i) => `Week ${i + 1}`);
+
+let folderViewActive = false;
+let folderViewTerm = null;
+let folderViewWeek = null;
+
+function getFolderViewPlans() {
+    const isTeacher = !!currentUser && currentUser.role === "teacher";
+    return isTeacher
+        ? lessonPlansCache.filter(plan => namesMatch(plan.teacher, currentUser.name))
+        : lessonPlansCache;
+}
+
+function setLessonPlanView(view) {
+    folderViewActive = view === "folders";
+
+    const toggleButtons = document.querySelectorAll("#lessonPlanViewToggle .view-toggle-btn");
+    toggleButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.view === view));
+
+    const tableContainer = document.getElementById("lessonPlanTableContainer");
+    const folderContainer = document.getElementById("lessonPlanFolderView");
+    if (tableContainer) tableContainer.classList.toggle("hidden", folderViewActive);
+    if (folderContainer) folderContainer.classList.toggle("hidden", !folderViewActive);
+
+    if (folderViewActive) renderLessonPlanFolders();
+}
+
+function renderLessonPlanBreadcrumb() {
+    const el = document.getElementById("lessonPlanBreadcrumb");
+    if (!el) return;
+
+    const parts = [];
+    parts.push(
+        folderViewTerm
+            ? `<button type="button" data-crumb="root"><i class="fa-solid fa-folder-tree"></i> DLL Modules</button>`
+            : `<span class="crumb-current"><i class="fa-solid fa-folder-tree"></i> DLL Modules</span>`
+    );
+
+    if (folderViewTerm) {
+        parts.push(`<span class="crumb-sep">/</span>`);
+        parts.push(
+            folderViewWeek
+                ? `<button type="button" data-crumb="term">${escapeHtml(folderViewTerm)}</button>`
+                : `<span class="crumb-current">${escapeHtml(folderViewTerm)}</span>`
+        );
+    }
+
+    if (folderViewWeek) {
+        parts.push(`<span class="crumb-sep">/</span>`);
+        parts.push(`<span class="crumb-current">${escapeHtml(folderViewWeek)}</span>`);
+    }
+
+    el.innerHTML = parts.join("");
+}
+
+function renderLessonPlanFolders() {
+    if (!folderViewActive) return;
+
+    const grid = document.getElementById("lessonPlanFolderGrid");
+    const fileList = document.getElementById("lessonPlanFolderFiles");
+    if (!grid || !fileList) return;
+
+    renderLessonPlanBreadcrumb();
+
+    const plans = getFolderViewPlans();
+
+    /* Level 1: Term folders */
+    if (!folderViewTerm) {
+        grid.classList.remove("hidden");
+        fileList.classList.add("hidden");
+        grid.innerHTML = TERM_FOLDERS.map(term => {
+            const count = plans.filter(p => p.term === term && p.storagePath).length;
+            return `<div class="folder-card" data-term="${escapeHtml(term)}">
+                <i class="fa-solid fa-folder"></i>
+                <strong>${escapeHtml(term)}</strong>
+                <small>${count} file${count === 1 ? "" : "s"}</small>
+            </div>`;
+        }).join("");
+        return;
+    }
+
+    /* Level 2: Week folders inside the selected term */
+    if (!folderViewWeek) {
+        grid.classList.remove("hidden");
+        fileList.classList.add("hidden");
+        grid.innerHTML = WEEK_FOLDERS.map(week => {
+            const count = plans.filter(p => p.term === folderViewTerm && p.week === week && p.storagePath).length;
+            return `<div class="folder-card" data-week="${escapeHtml(week)}">
+                <i class="fa-solid fa-folder"></i>
+                <strong>${escapeHtml(week)}</strong>
+                <small>${count} file${count === 1 ? "" : "s"}</small>
+            </div>`;
+        }).join("");
+        return;
+    }
+
+    /* Level 3: files inside the selected Term/Week folder */
+    grid.classList.add("hidden");
+    fileList.classList.remove("hidden");
+    const files = plans.filter(p => p.term === folderViewTerm && p.week === folderViewWeek && p.storagePath);
+
+    if (!files.length) {
+        fileList.innerHTML = `<div class="folder-empty">
+            <i class="fa-solid fa-folder-open"></i><br>
+            No files uploaded yet in ${escapeHtml(folderViewTerm)} / ${escapeHtml(folderViewWeek)}.
+        </div>`;
+        return;
+    }
+
+    fileList.innerHTML = files.map(plan => {
+        const status = getLessonPlanStatus(plan.submittedAt, plan.dueAt, !!(plan.fileURL || plan.storagePath));
+        return `<div class="folder-file-row" data-plan-id="${plan.id}">
+            <div class="folder-file-main">
+                <i class="fa-solid ${plan.fileIcon || "fa-file-lines"}"></i>
+                <div>
+                    <div class="folder-file-name">${escapeHtml(plan.fileName || "File")}</div>
+                    <div class="folder-file-meta">${escapeHtml(plan.teacher || "")} • ${escapeHtml(plan.subject || "")}</div>
+                </div>
+            </div>
+            <span class="status ${getStatusClass(status)}">${status}</span>
+        </div>`;
+    }).join("");
+}
+
+document.getElementById("lessonPlanViewToggle")?.addEventListener("click", function(event) {
+    const btn = event.target.closest(".view-toggle-btn");
+    if (btn) setLessonPlanView(btn.dataset.view);
+});
+
+document.getElementById("lessonPlanFolderGrid")?.addEventListener("click", function(event) {
+    const card = event.target.closest(".folder-card");
+    if (!card) return;
+    if (card.dataset.term) folderViewTerm = card.dataset.term;
+    else if (card.dataset.week) folderViewWeek = card.dataset.week;
+    renderLessonPlanFolders();
+});
+
+document.getElementById("lessonPlanFolderFiles")?.addEventListener("click", function(event) {
+    const row = event.target.closest(".folder-file-row");
+    if (row && row.dataset.planId) openLessonPreview(row.dataset.planId);
+});
+
+document.getElementById("lessonPlanBreadcrumb")?.addEventListener("click", function(event) {
+    const btn = event.target.closest("button[data-crumb]");
+    if (!btn) return;
+    if (btn.dataset.crumb === "root") { folderViewTerm = null; folderViewWeek = null; }
+    else if (btn.dataset.crumb === "term") { folderViewWeek = null; }
+    renderLessonPlanFolders();
+});
 
 
 /* Keeps the "Teacher Name" dropdown on the Add Lesson Plan form

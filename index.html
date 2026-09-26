@@ -611,6 +611,15 @@
                             >
                         </div>
 
+                        <div class="view-toggle" id="lessonPlanViewToggle">
+                            <button type="button" class="view-toggle-btn active" data-view="table">
+                                <i class="fa-solid fa-table"></i> Table
+                            </button>
+                            <button type="button" class="view-toggle-btn" data-view="folders">
+                                <i class="fa-solid fa-folder"></i> DLL Modules
+                            </button>
+                        </div>
+
                         <button class="outline-btn">
                             <i class="fa-solid fa-filter"></i>
                             Filter
@@ -619,7 +628,7 @@
                     </div>
 
 
-                    <div class="table-container">
+                    <div class="table-container" id="lessonPlanTableContainer">
 
                         <table id="lessonPlanTable">
 
@@ -645,6 +654,16 @@
                             </tbody>
 
                         </table>
+
+                    </div>
+
+                    <div class="folder-view hidden" id="lessonPlanFolderView">
+
+                        <div class="folder-breadcrumb" id="lessonPlanBreadcrumb"></div>
+
+                        <div class="folder-grid" id="lessonPlanFolderGrid"></div>
+
+                        <div class="folder-file-list" id="lessonPlanFolderFiles"></div>
 
                     </div>
 
