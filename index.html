@@ -756,7 +756,7 @@
         <div class="modal-header">
             <div>
                 <h2>Lesson Plan / DLL Preview</h2>
-                <p>Review the uploaded file and confirm who will check it.</p>
+                <p>Review the uploaded file. Admins automatically check every submission.</p>
             </div>
             <button class="close-modal" id="closeLessonPreviewModal" type="button">
                 <i class="fa-solid fa-xmark"></i>
@@ -767,26 +767,13 @@
             <div><span>Subject</span><strong id="previewSubject">—</strong></div>
             <div><span>Term / Week</span><strong id="previewTermWeek">—</strong></div>
             <div><span>Submission Status</span><strong id="previewStatus">—</strong></div>
-            <div><span>Reviewer</span><strong id="previewReviewer">—</strong></div>
+            <div><span>Checked by</span><strong id="previewReviewer">—</strong></div>
         </div>
         <div class="file-preview-panel" id="filePreviewPanel">
             <i class="fa-solid fa-file-lines"></i>
             <strong id="previewFileName">No file</strong>
             <p id="previewFileMessage">The uploaded document will appear here when a browser preview is available.</p>
             <iframe id="lessonFileFrame" title="Lesson plan file preview" hidden></iframe>
-        </div>
-        <div class="review-routing">
-            <label>
-                Checked by
-                <select id="previewReviewerSelect">
-                    <option value="admin">Admin / School Administrator</option>
-                    <option value="department-head">Department Head</option>
-                </select>
-            </label>
-            <button type="button" class="primary-btn" id="saveReviewerBtn">
-                <i class="fa-solid fa-user-check"></i>
-                Assign Checker
-            </button>
         </div>
         <div class="modal-actions">
             <button type="button" class="outline-btn" id="closePreviewBtn">Close</button>
@@ -1196,10 +1183,10 @@
 })();
 </script>
 <!-- Supabase browser SDK -->
-<script src="supabase.js?v=3"></script>
-<script src="supabase-config.js?v=3"></script>
+<script src="supabase.js?v=5"></script>
+<script src="supabase-config.js?v=5"></script>
 
-<script src="script.js?v=3"></script>
+<script src="script.js?v=5"></script>
 
 </body>
 </html>

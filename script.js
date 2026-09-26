@@ -1264,9 +1264,8 @@ function getStatusClass(status) {
 
    Teachers may only upload and see their OWN lesson
    plan / DLL submissions — never another teacher's
-   uploaded file. Only admin / department-head accounts
-   can browse every submission and choose who checks it
-   (see the "Checked by" reviewer control).
+   uploaded file. Every submission is automatically
+   checked by Admin, so there's no manual routing here.
 ================================ */
 
 function applyLessonPlanVisibility() {
@@ -1287,37 +1286,6 @@ function applyLessonPlanVisibility() {
 
         /* A teacher only ever sees rows that belong to them. */
         row.classList.toggle("hidden", isTeacher && !isOwnRow);
-
-        /* Only admin / department-head can choose the
-           checker for a file, so hide that control for
-           teachers and show a read-only status instead. */
-        const reviewerSelect = row.querySelector(".reviewer-select");
-        const assignBtn = row.querySelector(".assign-review-btn");
-
-        if (reviewerSelect) reviewerSelect.classList.toggle("hidden", isTeacher);
-        if (assignBtn) assignBtn.classList.toggle("hidden", isTeacher);
-
-        const actionsCell = row.querySelector(".lesson-actions");
-        let badge = row.querySelector(".review-status-badge");
-
-        if (isTeacher && actionsCell) {
-
-            const reviewer = row.dataset.reviewer || "admin";
-
-            if (!badge) {
-                badge = document.createElement("span");
-                badge.className = "review-status-badge";
-                actionsCell.appendChild(badge);
-            }
-
-            badge.innerHTML =
-                `<i class="fa-solid fa-user-shield"></i> ${reviewerLabel(reviewer)}`;
-
-        } else if (badge) {
-
-            badge.remove();
-
-        }
 
     });
 
@@ -1897,19 +1865,15 @@ async function deleteTeacherRecord(teacherId, teacherName) {
 
 
 /* ================================
-   LESSON PLAN PREVIEW + REVIEW ROUTING
+   LESSON PLAN PREVIEW
+   Every submission is automatically checked by Admin —
+   there's no manual routing/assignment step anymore.
 ================================ */
 
 const lessonPreviewModal = document.getElementById("lessonPreviewModal");
 const closeLessonPreviewModal = document.getElementById("closeLessonPreviewModal");
 const closePreviewBtn = document.getElementById("closePreviewBtn");
-const saveReviewerBtn = document.getElementById("saveReviewerBtn");
-const previewReviewerSelect = document.getElementById("previewReviewerSelect");
 let activeLessonPlanId = null;
-
-function reviewerLabel(value) {
-    return value === "department-head" ? "Department Head" : "Admin / School Administrator";
-}
 
 /* Sourced from lessonPlansCache by id (rather than scraped from a
    table row) so both the Table view and the DLL Modules folder view
@@ -1929,17 +1893,12 @@ async function openLessonPreview(planId) {
 
     activeLessonPlanId = planId;
 
-    const reviewRouting = document.querySelector(".review-routing");
-    if (reviewRouting) reviewRouting.classList.toggle("hidden", isTeacher);
-
     const status = getLessonPlanStatus(plan.submittedAt, plan.dueAt, !!(plan.fileURL || plan.storagePath));
     document.getElementById("previewTeacher").textContent = plan.teacher || "—";
     document.getElementById("previewSubject").textContent = plan.subject || "—";
     document.getElementById("previewTermWeek").textContent = `${plan.term || "—"} / ${plan.week || "—"}`;
     document.getElementById("previewStatus").innerHTML = `<span class="status ${getStatusClass(status)}">${status}</span>`;
-    const reviewer = plan.reviewer || "admin";
-    previewReviewerSelect.value = reviewer;
-    document.getElementById("previewReviewer").textContent = reviewerLabel(reviewer);
+    document.getElementById("previewReviewer").textContent = "Admin / School Administrator";
     const fileName = plan.fileName || (plan.storagePath ? "File" : "No file submitted");
     document.getElementById("previewFileName").textContent = fileName;
     const frame = document.getElementById("lessonFileFrame");
@@ -1969,7 +1928,7 @@ async function openLessonPreview(planId) {
                 frame.hidden = false;
                 message.textContent = "Loading document preview...";
             } else {
-                message.textContent = "A preview isn't available for this file type. Use the assigned checker action to review the document.";
+                message.textContent = "A preview isn't available for this file type.";
             }
         } catch (err) { console.error(err); message.textContent = "The file could not be opened. Please check your access and try again."; }
     } else { message.textContent = "No uploaded file is available for preview."; lessonPreviewModal.classList.add("show"); }
@@ -1982,50 +1941,13 @@ function closeLessonPreview() {
     activeLessonPlanId = null;
 }
 
-/* Persists a reviewer assignment to the lesson plan's Supabase
-   doc. The live listener (startDataListeners) then re-renders the
-   table for every signed-in account, so the assignment is shared
-   immediately instead of only living in one browser's row. */
-
-async function updateLessonPlanReviewer(planId, reviewer) {
-
-    try {
-
-        const { error } = await supabaseClient.from("lesson_plans").update({ reviewer }).eq("id", planId);
-        if (error) throw error;
-
-        await loadLessonPlans();
-
-        alert(`File assigned to ${reviewerLabel(reviewer)} for checking.`);
-
-    } catch (err) {
-
-        console.error("Could not update the reviewer assignment:", err);
-
-        alert("Sorry, that assignment couldn't be saved. Please try again.");
-
-    }
-
-}
-
 document.addEventListener("click", function(event) {
     const previewButton = event.target.closest(".preview-lesson-btn");
-    const assignButton = event.target.closest(".assign-review-btn");
     const deleteTeacherButton = event.target.closest(".delete-teacher-btn");
     const editTeacherButton = event.target.closest(".edit-teacher-btn");
 
     if (previewButton) {
         openLessonPreview(previewButton.closest("tr")?.dataset.id);
-        return;
-    }
-
-    if (assignButton) {
-        if (currentUser && currentUser.role === "teacher") return;
-        const row = assignButton.closest("tr");
-        const select = row?.querySelector(".reviewer-select");
-        if (row && select && row.dataset.id) {
-            updateLessonPlanReviewer(row.dataset.id, select.value);
-        }
         return;
     }
 
@@ -2046,26 +1968,10 @@ document.addEventListener("click", function(event) {
     }
 });
 
-document.addEventListener("change", function(event) {
-    if (!event.target.matches(".reviewer-select")) return;
-    if (currentUser && currentUser.role === "teacher") return;
-    const row = event.target.closest("tr");
-    if (row && row.dataset.id) {
-        updateLessonPlanReviewer(row.dataset.id, event.target.value);
-    }
-});
-
 closeLessonPreviewModal?.addEventListener("click", closeLessonPreview);
 closePreviewBtn?.addEventListener("click", closeLessonPreview);
 lessonPreviewModal?.addEventListener("click", function(event) {
     if (event.target === lessonPreviewModal) closeLessonPreview();
-});
-saveReviewerBtn?.addEventListener("click", async function() {
-    if (!activeLessonPlanId) return;
-    if (currentUser && currentUser.role === "teacher") return;
-    const reviewer = previewReviewerSelect.value;
-    await updateLessonPlanReviewer(activeLessonPlanId, reviewer);
-    document.getElementById("previewReviewer").textContent = reviewerLabel(reviewer);
 });
 
 
@@ -2238,7 +2144,6 @@ function renderLessonPlanTable() {
             const status = getLessonPlanStatus(plan.submittedAt, plan.dueAt, !!(plan.fileURL || plan.storagePath));
             const department = plan.department || "Academic";
             const departmentClass = department === "TechPro" ? "techpro" : "academic";
-            const reviewer = plan.reviewer || "admin";
 
             const fileCellHtml = plan.storagePath
                 ? `<span class="file-chip"><i class="fa-solid ${plan.fileIcon || "fa-file-lines"}"></i> ${escapeHtml(plan.fileName || "File")}</span>`
@@ -2248,7 +2153,6 @@ function renderLessonPlanTable() {
                 data-id="${plan.id}"
                 data-submitted-at="${plan.submittedAt || ""}"
                 data-due-at="${plan.dueAt || ""}"
-                data-reviewer="${reviewer}"
                 data-file-name="${escapeHtml(plan.fileName || "")}"
                 data-storage-path="${escapeHtml(plan.storagePath || "")}"
             >
@@ -2267,23 +2171,14 @@ function renderLessonPlanTable() {
                         <button type="button" class="table-btn preview-lesson-btn" title="Preview lesson plan">
                             <i class="fa-solid fa-eye"></i>
                         </button>
-                        <select class="reviewer-select" title="Choose who will check this file">
-                            <option value="admin">Admin Check</option>
-                            <option value="department-head">Department Head Check</option>
-                        </select>
-                        <button type="button" class="table-btn assign-review-btn" title="Assign reviewer">
-                            <i class="fa-solid fa-user-check"></i>
-                        </button>
+                        <span class="review-status-badge">
+                            <i class="fa-solid fa-user-shield"></i> Admin / School Administrator
+                        </span>
                     </div>
                 </td>
             </tr>`;
 
         }).join("");
-
-        tbody.querySelectorAll("tr[data-id]").forEach(function(row) {
-            const select = row.querySelector(".reviewer-select");
-            if (select) select.value = row.dataset.reviewer || "admin";
-        });
 
     }
 
