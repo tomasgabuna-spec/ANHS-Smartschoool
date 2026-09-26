@@ -3103,7 +3103,8 @@ tr.syllabus-group-row td {
 .lesson-action-cell { min-width: 250px; }
 .lesson-actions { display:flex; align-items:center; gap:7px; }
 .lesson-preview-modal { max-width:900px; max-height:90vh; overflow:auto; transition: max-width .18s ease, max-height .18s ease, width .18s ease, height .18s ease; }
-.modal-header-actions { display:flex; align-items:center; gap:8px; }
+.lesson-preview-modal .modal-header { position:sticky; top:0; z-index:2; background:white; padding-top:0; padding-bottom:12px; margin-bottom:12px; border-bottom:1px solid var(--border); }
+.modal-header-actions { display:flex; align-items:center; gap:8px; flex-shrink:0; }
 .lesson-preview-modal.maximized { width:95vw; height:95vh; max-width:95vw; max-height:95vh; }
 .lesson-preview-modal.maximized #filePreviewPanel { min-height: calc(95vh - 260px); }
 .lesson-preview-modal.maximized #lessonFileFrame { height: calc(95vh - 300px); }
