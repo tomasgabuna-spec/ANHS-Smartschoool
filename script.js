@@ -1372,6 +1372,11 @@ if (lessonPlanForm) {
                     "newLessonDueDate"
                 ).value;
 
+            const grade =
+                document.getElementById(
+                    "newLessonGrade"
+                ).value;
+
             const term =
                 document.getElementById(
                     "newLessonTerm"
@@ -1409,6 +1414,13 @@ if (lessonPlanForm) {
             /* Validate the required fields */
 
             let hasError = false;
+
+            if (!grade) {
+                document.getElementById("newLessonGrade").classList.add("field-invalid");
+                hasError = true;
+            } else {
+                document.getElementById("newLessonGrade").classList.remove("field-invalid");
+            }
 
             if (!rawDueDate) {
                 document.getElementById("newLessonDueDate").classList.add("field-invalid");
@@ -1479,12 +1491,13 @@ if (lessonPlanForm) {
 
             try {
 
-                /* Files are organised under DLL Modules straight by Term and
-                   Week, e.g. "Term 1/Week 1/<Teacher_Name>_<time>_<file>", so
-                   every week has its own folder in Supabase Storage and admin
-                   can browse the bucket directly by term/week. Term and Week
-                   are fixed dropdown values ("Term 1".."Term 3", "Week 1".."Week
-                   12"), so they're safe to use as literal folder names as-is.
+                /* Files are organised under DLL Modules by Grade Level, then
+                   Department, then Term and Week, e.g. "Grade 11/TechPro/Term
+                   1/Week 1/<Teacher_Name>_<time>_<file>", so every week has
+                   its own folder in Supabase Storage and admin can browse the
+                   bucket directly by grade/department/term/week. Grade,
+                   Department, Term and Week are all fixed dropdown values,
+                   so they're safe to use as literal folder names as-is.
                    Privacy is now enforced by storage object ownership (see the
                    updated lesson_files_* RLS policies) rather than by nesting
                    an account-id folder in the path. */
@@ -1492,12 +1505,12 @@ if (lessonPlanForm) {
                     return String(value || "").trim().replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "Unsorted";
                 };
                 const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-                const storagePath = term.trim() + "/" + week.trim() + "/" +
+                const storagePath = grade.trim() + "/" + department.trim() + "/" + term.trim() + "/" + week.trim() + "/" +
                     folderSafe(teacher) + "_" + Date.now() + "_" + safeName;
                 const { error: uploadError } = await supabaseClient.storage.from("lesson-plans").upload(storagePath, file, { upsert:false, contentType:file.type || "application/octet-stream" });
                 if (uploadError) throw uploadError;
                 const { error: insertError } = await supabaseClient.from("lesson_plans").insert({
-                    teacher, department, subject, term, week,
+                    teacher, department, subject, term, week, grade,
                     submitted_at:submittedAt, due_at:dueAt, file_name:file.name, file_icon:fileIcon, storage_path:storagePath,
                     reviewer:"admin", created_by:currentUser.uid
                 });
@@ -2196,7 +2209,7 @@ function renderLessonPlanTable() {
 
     if (!lessonPlansCache.length) {
 
-        tbody.innerHTML = `<tr><td colspan="10" class="tracker-no-results">
+        tbody.innerHTML = `<tr><td colspan="11" class="tracker-no-results">
             <i class="fa-solid fa-file-circle-xmark"></i>
             No lesson plans submitted yet.
         </td></tr>`;
@@ -2224,6 +2237,7 @@ function renderLessonPlanTable() {
             >
                 <td>${plan.submittedAt ? formatDueDate(plan.submittedAt) : "—"}</td>
                 <td>${escapeHtml(plan.teacher || "")}</td>
+                <td>${escapeHtml(plan.grade || "—")}</td>
                 <td><span class="status ${departmentClass}">${escapeHtml(department)}</span></td>
                 <td>${escapeHtml(plan.subject || "")}</td>
                 <td>${escapeHtml(plan.term || "")}</td>
@@ -2270,14 +2284,23 @@ function renderLessonPlanTable() {
 /* ================================
    DLL MODULES — FOLDER VIEW
    Same lessonPlansCache as the table, just browsed as
-   Term 1/2/3 > Week 1-12 > files, matching how the files
-   are actually organised in Supabase Storage.
+   Grade 11/12 > TechPro/Academics > Term 1/2/3 > Week 1-12 > files,
+   matching how the files are actually organised in Supabase Storage.
 ================================ */
 
+const GRADE_FOLDERS = ["Grade 11", "Grade 12"];
+/* label = what's shown/clicked as the folder name; value = the
+   underlying plan.department value that folder filters on. */
+const DEPARTMENT_FOLDERS = [
+    { label: "TechPro", value: "TechPro" },
+    { label: "Academics", value: "Academic" }
+];
 const TERM_FOLDERS = ["Term 1", "Term 2", "Term 3"];
 const WEEK_FOLDERS = Array.from({ length: 12 }, (_, i) => `Week ${i + 1}`);
 
 let folderViewActive = false;
+let folderViewGrade = null;
+let folderViewDept = null;
 let folderViewTerm = null;
 let folderViewWeek = null;
 
@@ -2308,10 +2331,28 @@ function renderLessonPlanBreadcrumb() {
 
     const parts = [];
     parts.push(
-        folderViewTerm
+        folderViewGrade
             ? `<button type="button" data-crumb="root"><i class="fa-solid fa-folder-tree"></i> DLL Modules</button>`
             : `<span class="crumb-current"><i class="fa-solid fa-folder-tree"></i> DLL Modules</span>`
     );
+
+    if (folderViewGrade) {
+        parts.push(`<span class="crumb-sep">/</span>`);
+        parts.push(
+            folderViewDept
+                ? `<button type="button" data-crumb="grade">${escapeHtml(folderViewGrade)}</button>`
+                : `<span class="crumb-current">${escapeHtml(folderViewGrade)}</span>`
+        );
+    }
+
+    if (folderViewDept) {
+        parts.push(`<span class="crumb-sep">/</span>`);
+        parts.push(
+            folderViewTerm
+                ? `<button type="button" data-crumb="dept">${escapeHtml(folderViewDept.label)}</button>`
+                : `<span class="crumb-current">${escapeHtml(folderViewDept.label)}</span>`
+        );
+    }
 
     if (folderViewTerm) {
         parts.push(`<span class="crumb-sep">/</span>`);
@@ -2341,12 +2382,42 @@ function renderLessonPlanFolders() {
 
     const plans = getFolderViewPlans();
 
-    /* Level 1: Term folders */
+    /* Level 1: Grade folders */
+    if (!folderViewGrade) {
+        grid.classList.remove("hidden");
+        fileList.classList.add("hidden");
+        grid.innerHTML = GRADE_FOLDERS.map(grade => {
+            const count = plans.filter(p => p.grade === grade && p.storagePath).length;
+            return `<div class="folder-card" data-grade="${escapeHtml(grade)}">
+                <i class="fa-solid fa-folder"></i>
+                <strong>${escapeHtml(grade)}</strong>
+                <small>${count} file${count === 1 ? "" : "s"}</small>
+            </div>`;
+        }).join("");
+        return;
+    }
+
+    /* Level 2: Department folders (TechPro / Academics) inside the selected grade */
+    if (!folderViewDept) {
+        grid.classList.remove("hidden");
+        fileList.classList.add("hidden");
+        grid.innerHTML = DEPARTMENT_FOLDERS.map(dept => {
+            const count = plans.filter(p => p.grade === folderViewGrade && (p.department || "Academic") === dept.value && p.storagePath).length;
+            return `<div class="folder-card" data-dept="${escapeHtml(dept.value)}">
+                <i class="fa-solid fa-folder"></i>
+                <strong>${escapeHtml(dept.label)}</strong>
+                <small>${count} file${count === 1 ? "" : "s"}</small>
+            </div>`;
+        }).join("");
+        return;
+    }
+
+    /* Level 3: Term folders inside the selected grade/department */
     if (!folderViewTerm) {
         grid.classList.remove("hidden");
         fileList.classList.add("hidden");
         grid.innerHTML = TERM_FOLDERS.map(term => {
-            const count = plans.filter(p => p.term === term && p.storagePath).length;
+            const count = plans.filter(p => p.grade === folderViewGrade && (p.department || "Academic") === folderViewDept.value && p.term === term && p.storagePath).length;
             return `<div class="folder-card" data-term="${escapeHtml(term)}">
                 <i class="fa-solid fa-folder"></i>
                 <strong>${escapeHtml(term)}</strong>
@@ -2356,12 +2427,12 @@ function renderLessonPlanFolders() {
         return;
     }
 
-    /* Level 2: Week folders inside the selected term */
+    /* Level 4: Week folders inside the selected term */
     if (!folderViewWeek) {
         grid.classList.remove("hidden");
         fileList.classList.add("hidden");
         grid.innerHTML = WEEK_FOLDERS.map(week => {
-            const count = plans.filter(p => p.term === folderViewTerm && p.week === week && p.storagePath).length;
+            const count = plans.filter(p => p.grade === folderViewGrade && (p.department || "Academic") === folderViewDept.value && p.term === folderViewTerm && p.week === week && p.storagePath).length;
             return `<div class="folder-card" data-week="${escapeHtml(week)}">
                 <i class="fa-solid fa-folder"></i>
                 <strong>${escapeHtml(week)}</strong>
@@ -2371,15 +2442,15 @@ function renderLessonPlanFolders() {
         return;
     }
 
-    /* Level 3: files inside the selected Term/Week folder */
+    /* Level 5: files inside the selected Grade/Department/Term/Week folder */
     grid.classList.add("hidden");
     fileList.classList.remove("hidden");
-    const files = plans.filter(p => p.term === folderViewTerm && p.week === folderViewWeek && p.storagePath);
+    const files = plans.filter(p => p.grade === folderViewGrade && (p.department || "Academic") === folderViewDept.value && p.term === folderViewTerm && p.week === folderViewWeek && p.storagePath);
 
     if (!files.length) {
         fileList.innerHTML = `<div class="folder-empty">
             <i class="fa-solid fa-folder-open"></i><br>
-            No files uploaded yet in ${escapeHtml(folderViewTerm)} / ${escapeHtml(folderViewWeek)}.
+            No files uploaded yet in ${escapeHtml(folderViewGrade)} / ${escapeHtml(folderViewDept.label)} / ${escapeHtml(folderViewTerm)} / ${escapeHtml(folderViewWeek)}.
         </div>`;
         return;
     }
@@ -2407,7 +2478,9 @@ document.getElementById("lessonPlanViewToggle")?.addEventListener("click", funct
 document.getElementById("lessonPlanFolderGrid")?.addEventListener("click", function(event) {
     const card = event.target.closest(".folder-card");
     if (!card) return;
-    if (card.dataset.term) folderViewTerm = card.dataset.term;
+    if (card.dataset.grade) folderViewGrade = card.dataset.grade;
+    else if (card.dataset.dept) folderViewDept = DEPARTMENT_FOLDERS.find(d => d.value === card.dataset.dept) || null;
+    else if (card.dataset.term) folderViewTerm = card.dataset.term;
     else if (card.dataset.week) folderViewWeek = card.dataset.week;
     renderLessonPlanFolders();
 });
@@ -2420,7 +2493,9 @@ document.getElementById("lessonPlanFolderFiles")?.addEventListener("click", func
 document.getElementById("lessonPlanBreadcrumb")?.addEventListener("click", function(event) {
     const btn = event.target.closest("button[data-crumb]");
     if (!btn) return;
-    if (btn.dataset.crumb === "root") { folderViewTerm = null; folderViewWeek = null; }
+    if (btn.dataset.crumb === "root") { folderViewGrade = null; folderViewDept = null; folderViewTerm = null; folderViewWeek = null; }
+    else if (btn.dataset.crumb === "grade") { folderViewDept = null; folderViewTerm = null; folderViewWeek = null; }
+    else if (btn.dataset.crumb === "dept") { folderViewTerm = null; folderViewWeek = null; }
     else if (btn.dataset.crumb === "term") { folderViewWeek = null; }
     renderLessonPlanFolders();
 });
