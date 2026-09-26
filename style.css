@@ -112,10 +112,30 @@ body {
             var(--primary)
         );
 
+    overflow: hidden;
+
     z-index: 999;
 }
 
+.login-page::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+
+    background-image: url("assets/anhs-logo.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: min(100vw, 1000px) auto;
+
+    opacity: 0.22;
+
+    pointer-events: none;
+}
+
 .login-card {
+    position: relative;
+    z-index: 1;
+
     width: 100%;
     max-width: 380px;
 
