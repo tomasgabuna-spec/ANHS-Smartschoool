@@ -1873,7 +1873,29 @@ async function deleteTeacherRecord(teacherId, teacherName) {
 const lessonPreviewModal = document.getElementById("lessonPreviewModal");
 const closeLessonPreviewModal = document.getElementById("closeLessonPreviewModal");
 const closePreviewBtn = document.getElementById("closePreviewBtn");
+const maximizeLessonPreviewModal = document.getElementById("maximizeLessonPreviewModal");
 let activeLessonPlanId = null;
+
+/* Toggles the preview modal between its normal size and a
+   near-fullscreen size, so long lesson plan / DLL documents are
+   easier to read without leaving the page. The icon and title
+   flip between "expand" (maximize) and "compress" (minimize). */
+function toggleLessonPreviewMaximize() {
+    const modalContent = lessonPreviewModal?.querySelector(".lesson-preview-modal");
+    if (!modalContent) return;
+    const icon = maximizeLessonPreviewModal.querySelector("i");
+    const isMaximized = modalContent.classList.toggle("maximized");
+    if (isMaximized) {
+        icon.classList.remove("fa-expand");
+        icon.classList.add("fa-compress");
+        maximizeLessonPreviewModal.title = "Minimize";
+    } else {
+        icon.classList.remove("fa-compress");
+        icon.classList.add("fa-expand");
+        maximizeLessonPreviewModal.title = "Maximize";
+    }
+}
+maximizeLessonPreviewModal?.addEventListener("click", toggleLessonPreviewMaximize);
 
 /* Sourced from lessonPlansCache by id (rather than scraped from a
    table row) so both the Table view and the DLL Modules folder view
@@ -1938,6 +1960,13 @@ function closeLessonPreview() {
     lessonPreviewModal?.classList.remove("show");
     const frame = document.getElementById("lessonFileFrame");
     if (frame) { frame.removeAttribute("src"); frame.onload = null; }
+    const modalContent = lessonPreviewModal?.querySelector(".lesson-preview-modal");
+    if (modalContent) {
+        modalContent.classList.remove("maximized");
+        const icon = maximizeLessonPreviewModal?.querySelector("i");
+        if (icon) { icon.classList.remove("fa-compress"); icon.classList.add("fa-expand"); }
+        if (maximizeLessonPreviewModal) maximizeLessonPreviewModal.title = "Maximize";
+    }
     activeLessonPlanId = null;
 }
 
