@@ -178,6 +178,7 @@ body {
 }
 
 #loginBrandLogo, #sidebarBrandLogo {
+    background-color: transparent;
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
