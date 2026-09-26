@@ -120,7 +120,7 @@ body {
     background-image: url("assets/anhs-logo.png");
     background-repeat: no-repeat;
     background-position: center;
-    background-size: min(100vw, 1000px) auto;
+    background-size: min(55vw, 480px) auto;
 
     opacity: 1;
 
