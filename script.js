@@ -1946,14 +1946,31 @@ async function openLessonPreview(planId) {
     const message = document.getElementById("previewFileMessage");
     frame.hidden = true;
     frame.removeAttribute("src");
+    frame.onload = null;
     if (plan.storagePath) {
         lessonPreviewModal.classList.add("show");
         message.textContent = "Preparing secure file preview...";
         try {
             const { data, error } = await supabaseClient.storage.from("lesson-plans").createSignedUrl(plan.storagePath, 300);
             if (error) throw error;
-            if (/\.pdf$/i.test(fileName)) { frame.src = data.signedUrl; frame.hidden = false; message.textContent = "PDF preview is available below."; }
-            else message.textContent = "File is uploaded. Use the assigned checker action to review the document.";
+            if (/\.pdf$/i.test(fileName)) {
+                /* PDFs render natively in the browser. */
+                frame.src = data.signedUrl;
+                frame.hidden = false;
+                message.textContent = "PDF preview is available below.";
+            } else if (/\.(docx?|pptx?)$/i.test(fileName)) {
+                /* Word/PowerPoint files are rendered in-page via the
+                   Microsoft Office Online viewer, so the checker never
+                   has to download the file just to look at it. It needs
+                   a URL it can fetch itself, so we hand it the same
+                   short-lived signed URL used for PDFs. */
+                frame.onload = function() { message.textContent = "Document preview is available below."; };
+                frame.src = "https://view.officeapps.live.com/op/embed.aspx?src=" + encodeURIComponent(data.signedUrl);
+                frame.hidden = false;
+                message.textContent = "Loading document preview...";
+            } else {
+                message.textContent = "A preview isn't available for this file type. Use the assigned checker action to review the document.";
+            }
         } catch (err) { console.error(err); message.textContent = "The file could not be opened. Please check your access and try again."; }
     } else { message.textContent = "No uploaded file is available for preview."; lessonPreviewModal.classList.add("show"); }
 }
@@ -1961,7 +1978,7 @@ async function openLessonPreview(planId) {
 function closeLessonPreview() {
     lessonPreviewModal?.classList.remove("show");
     const frame = document.getElementById("lessonFileFrame");
-    if (frame) frame.removeAttribute("src");
+    if (frame) { frame.removeAttribute("src"); frame.onload = null; }
     activeLessonPlanId = null;
 }
 
