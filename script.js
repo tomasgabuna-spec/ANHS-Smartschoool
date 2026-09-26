@@ -1048,7 +1048,7 @@ if (newLessonWeek) {
     placeholderOption.selected = true;
     placeholderOption.textContent = "Select week";
     newLessonWeek.appendChild(placeholderOption);
-    for (let week = 1; week <= 20; week++) {
+    for (let week = 1; week <= 12; week++) {
         const option = document.createElement("option");
         option.value = `Week ${week}`;
         option.textContent = `Week ${week}`;
@@ -1283,7 +1283,7 @@ function applyLessonPlanVisibility() {
             row.querySelectorAll("td")[1]?.textContent.trim() || "";
 
         const isOwnRow =
-            !currentUser || teacherName === currentUser.name;
+            !currentUser || namesMatch(teacherName, currentUser.name);
 
         /* A teacher only ever sees rows that belong to them. */
         row.classList.toggle("hidden", isTeacher && !isOwnRow);
@@ -1479,15 +1479,20 @@ if (lessonPlanForm) {
 
             try {
 
-                /* Files are organised by Term and Week, e.g.
-                   Term_2/Week_1/<account id>/<Teacher_Name>_<time>_<file>
-                   so every week has its own folder in Supabase Storage. The
-                   account id folder is what keeps a teacher's files private. */
+                /* Files are organised under DLL Modules straight by Term and
+                   Week, e.g. "Term 1/Week 1/<Teacher_Name>_<time>_<file>", so
+                   every week has its own folder in Supabase Storage and admin
+                   can browse the bucket directly by term/week. Term and Week
+                   are fixed dropdown values ("Term 1".."Term 3", "Week 1".."Week
+                   12"), so they're safe to use as literal folder names as-is.
+                   Privacy is now enforced by storage object ownership (see the
+                   updated lesson_files_* RLS policies) rather than by nesting
+                   an account-id folder in the path. */
                 const folderSafe = function(value) {
                     return String(value || "").trim().replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "Unsorted";
                 };
                 const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-                const storagePath = folderSafe(term) + "/" + folderSafe(week) + "/" + currentUser.uid + "/" +
+                const storagePath = term.trim() + "/" + week.trim() + "/" +
                     folderSafe(teacher) + "_" + Date.now() + "_" + safeName;
                 const { error: uploadError } = await supabaseClient.storage.from("lesson-plans").upload(storagePath, file, { upsert:false, contentType:file.type || "application/octet-stream" });
                 if (uploadError) throw uploadError;
@@ -1617,6 +1622,21 @@ const cancelTeacherModal =
     document.getElementById("cancelTeacherModal");
 
 
+/* When set, the teacher form submits an UPDATE to this roster row
+   instead of an INSERT. Cleared whenever the modal is opened fresh
+   from "Add Teacher" or closed. */
+let editingTeacherId = null;
+
+const teacherModalTitle = teacherModal ? teacherModal.querySelector(".modal-header h2") : null;
+const teacherModalSubtitle = teacherModal ? teacherModal.querySelector(".modal-header p") : null;
+const teacherFormSubmitBtn = document.querySelector("#teacherForm button[type=\"submit\"]");
+
+function setTeacherModalMode(mode) {
+    if (teacherModalTitle) teacherModalTitle.textContent = mode === "edit" ? "Edit Teacher" : "Add Teacher";
+    if (teacherModalSubtitle) teacherModalSubtitle.textContent = mode === "edit" ? "Update faculty information." : "Enter faculty information.";
+    if (teacherFormSubmitBtn) teacherFormSubmitBtn.textContent = mode === "edit" ? "Update Teacher" : "Save Teacher";
+}
+
 function openTeacherModal() {
 
     teacherModal.classList.add("show");
@@ -1627,6 +1647,36 @@ function openTeacherModal() {
 function hideTeacherModal() {
 
     teacherModal.classList.remove("show");
+    editingTeacherId = null;
+    setTeacherModalMode("add");
+    if (teacherForm) teacherForm.reset();
+
+}
+
+
+/* Fills the form with an existing roster row and switches the
+   modal into edit mode. */
+function openTeacherModalForEdit(teacher) {
+
+    if (!teacher) return;
+
+    editingTeacherId = teacher.id;
+    setTeacherModalMode("edit");
+
+    const setValue = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.value = value ?? "";
+    };
+
+    setValue("newTeacherName", teacher.name);
+    setValue("newTeacherSex", teacher.sex);
+    setValue("newTeacherAge", teacher.age);
+    setValue("newTeacherDepartment", teacher.department);
+    setValue("newTeacherPosition", teacher.position);
+    setValue("newTeacherYears", teacher.years);
+    setValue("newTeacherPostGrad", teacher.postGrad);
+
+    openTeacherModal();
 
 }
 
@@ -1635,7 +1685,12 @@ if (addTeacherBtn) {
 
     addTeacherBtn.addEventListener(
         "click",
-        openTeacherModal
+        function() {
+            editingTeacherId = null;
+            setTeacherModalMode("add");
+            if (teacherForm) teacherForm.reset();
+            openTeacherModal();
+        }
     );
 
 }
@@ -1739,32 +1794,39 @@ if (teacherForm) {
             const submitBtn =
                 teacherForm.querySelector('button[type="submit"]');
 
+            const isEditing = !!editingTeacherId;
+
             if (submitBtn) {
                 submitBtn.disabled = true;
                 submitBtn.dataset.originalText = submitBtn.textContent;
-                submitBtn.textContent = "Saving...";
+                submitBtn.textContent = isEditing ? "Updating..." : "Saving...";
             }
 
             try {
 
-                const { error } = await supabaseClient.from("teachers").insert({
+                const payload = {
                     name, sex, age:age ? Number(age) : null, department, position, years:years ? Number(years) : null,
-                    post_grad:postGrad, created_by:currentUser ? currentUser.uid : null
-                });
+                    post_grad:postGrad
+                };
+
+                const { error } = isEditing
+                    ? await supabaseClient.from("teachers").update(payload).eq("id", editingTeacherId)
+                    : await supabaseClient.from("teachers").insert(Object.assign({}, payload, { created_by:currentUser ? currentUser.uid : null }));
                 if (error) throw error;
 
                 await loadTeachers();
 
-                teacherForm.reset();
                 hideTeacherModal();
 
                 alert(
-                    "Teacher successfully added to ANHS SmartSchool."
+                    isEditing
+                        ? "Teacher record successfully updated."
+                        : "Teacher successfully added to ANHS SmartSchool."
                 );
 
             } catch (err) {
 
-                console.error("Could not add teacher:", err);
+                console.error("Could not save teacher:", err);
 
                 alert(
                     "Sorry, that teacher couldn't be saved. Please try again."
@@ -1774,7 +1836,7 @@ if (teacherForm) {
 
                 if (submitBtn) {
                     submitBtn.disabled = false;
-                    submitBtn.textContent = submitBtn.dataset.originalText || "Save Teacher";
+                    submitBtn.textContent = submitBtn.dataset.originalText || (isEditing ? "Update Teacher" : "Save Teacher");
                 }
 
             }
@@ -1846,7 +1908,7 @@ async function openLessonPreview(row) {
     /* Safety net: a teacher can never open another
        teacher's uploaded file, even if this were somehow
        triggered outside the normal table view. */
-    if (isTeacher && teacherName !== currentUser.name) return;
+    if (isTeacher && !namesMatch(teacherName, currentUser.name)) return;
 
     activeLessonRow = row;
 
@@ -1917,6 +1979,7 @@ document.addEventListener("click", function(event) {
     const previewButton = event.target.closest(".preview-lesson-btn");
     const assignButton = event.target.closest(".assign-review-btn");
     const deleteTeacherButton = event.target.closest(".delete-teacher-btn");
+    const editTeacherButton = event.target.closest(".edit-teacher-btn");
 
     if (previewButton) {
         openLessonPreview(previewButton.closest("tr"));
@@ -1939,6 +2002,14 @@ document.addEventListener("click", function(event) {
             const name = row.querySelector("td")?.textContent.trim();
             deleteTeacherRecord(row.dataset.id, name);
         }
+        return;
+    }
+
+    if (editTeacherButton) {
+        if (!currentUser || currentUser.role !== "admin") return;
+        const row = editTeacherButton.closest("tr");
+        const teacher = row && teachersCache.find(t => t.id === row.dataset.id);
+        openTeacherModalForEdit(teacher);
     }
 });
 
@@ -2092,6 +2163,9 @@ function renderTeacherTable() {
                 <td>${escapeHtml(teacher.postGrad || "—")}</td>
                 <td class="lesson-action-cell">
                     <div class="lesson-actions">
+                        <button type="button" class="table-btn edit-teacher-btn" title="Edit teacher" ${isAdmin ? "" : "disabled"}>
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
                         <button type="button" class="table-btn delete-teacher-btn" title="Remove teacher" ${isAdmin ? "" : "disabled"}>
                             <i class="fa-solid fa-trash"></i>
                         </button>
@@ -2214,11 +2288,21 @@ function statusPriority(status) {
     return { "Missing": 3, "Late": 2, "On Time": 1 }[status] || 0;
 }
 
+/* Teacher names get typed in two separate places (the Teachers
+   roster and a teacher's login profile) and only ever need to be
+   the "same person", not byte-identical. Collapse whitespace and
+   ignore case so a stray space or capitalization mismatch doesn't
+   make a real submission look Missing on the tracker. */
+function namesMatch(a, b) {
+    const normalize = value => String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
+    return normalize(a) === normalize(b);
+}
+
 function getTeacherWeekCompliance(teacherName, offsetWeeks, termFilter) {
     const start = getWeekStart(offsetWeeks);
     const end = getWeekEnd(offsetWeeks);
     const records = getLessonPlanRecords().filter(record => {
-        if (record.teacher !== teacherName || !record.dueAt) return false;
+        if (!namesMatch(record.teacher, teacherName) || !record.dueAt) return false;
         if (termFilter !== "all" && record.term !== termFilter) return false;
         const due = new Date(record.dueAt);
         return due >= start && due <= end;
@@ -2455,7 +2539,7 @@ function updateDashboardCounts() {
 
     const relevantPlans =
         isTeacher
-            ? lessonPlansCache.filter(plan => plan.teacher === currentUser.name)
+            ? lessonPlansCache.filter(plan => namesMatch(plan.teacher, currentUser.name))
             : lessonPlansCache;
 
     const lessonCount =
